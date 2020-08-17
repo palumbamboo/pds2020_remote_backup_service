@@ -1,0 +1,7 @@
+/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /Users/danieleleto/CLionProjects/Remote_Backup_Client
+-- Boost_INCLUDE_DIRS: /usr/local/include
+-- Boost_LIBRARIES: Boost::system;Boost::filesystem
+-- Boost_VERSION: 1.74.0
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /Users/danieleleto/CLionProjects/Remote_Backup_Client/cmake-build-debug

@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/danieleleto/CLionProjects/Remote_Backup_Client/FileWatcher.cpp
+FileWatcher.h
+/Users/danieleleto/CLionProjects/Remote_Backup_Client/FileWatcher.h
+
+/Users/danieleleto/CLionProjects/Remote_Backup_Client/FileWatcher.h
+filesystem
+-
+chrono
+-
+thread
+-
+unordered_map
+-
+string
+-
+functional
+-
+
+/Users/danieleleto/CLionProjects/Remote_Backup_Client/main.cpp
+iostream
+-
+FileWatcher.h
+/Users/danieleleto/CLionProjects/Remote_Backup_Client/FileWatcher.h
+
