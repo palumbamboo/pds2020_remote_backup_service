@@ -63,10 +63,10 @@ RM = /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/danieleleto/CLionProjects/Remote_Backup_Client
+CMAKE_SOURCE_DIR = /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/danieleleto/CLionProjects/Remote_Backup_Client/cmake-build-debug
+CMAKE_BINARY_DIR = /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug
 
 # Include any dependencies generated for this target.
 include CMakeFiles/Remote_Backup_Client.dir/depend.make
@@ -79,43 +79,58 @@ include CMakeFiles/Remote_Backup_Client.dir/flags.make
 
 CMakeFiles/Remote_Backup_Client.dir/main.cpp.o: CMakeFiles/Remote_Backup_Client.dir/flags.make
 CMakeFiles/Remote_Backup_Client.dir/main.cpp.o: ../main.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/danieleleto/CLionProjects/Remote_Backup_Client/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/Remote_Backup_Client.dir/main.cpp.o"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Remote_Backup_Client.dir/main.cpp.o -c /Users/danieleleto/CLionProjects/Remote_Backup_Client/main.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/Remote_Backup_Client.dir/main.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Remote_Backup_Client.dir/main.cpp.o -c /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/main.cpp
 
 CMakeFiles/Remote_Backup_Client.dir/main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Remote_Backup_Client.dir/main.cpp.i"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/danieleleto/CLionProjects/Remote_Backup_Client/main.cpp > CMakeFiles/Remote_Backup_Client.dir/main.cpp.i
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/main.cpp > CMakeFiles/Remote_Backup_Client.dir/main.cpp.i
 
 CMakeFiles/Remote_Backup_Client.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Remote_Backup_Client.dir/main.cpp.s"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/danieleleto/CLionProjects/Remote_Backup_Client/main.cpp -o CMakeFiles/Remote_Backup_Client.dir/main.cpp.s
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/main.cpp -o CMakeFiles/Remote_Backup_Client.dir/main.cpp.s
 
 CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.o: CMakeFiles/Remote_Backup_Client.dir/flags.make
 CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.o: ../FileWatcher.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/danieleleto/CLionProjects/Remote_Backup_Client/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.o"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.o -c /Users/danieleleto/CLionProjects/Remote_Backup_Client/FileWatcher.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.o -c /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/FileWatcher.cpp
 
 CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.i"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/danieleleto/CLionProjects/Remote_Backup_Client/FileWatcher.cpp > CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.i
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/FileWatcher.cpp > CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.i
 
 CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.s"
-	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/danieleleto/CLionProjects/Remote_Backup_Client/FileWatcher.cpp -o CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.s
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/FileWatcher.cpp -o CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.s
+
+CMakeFiles/Remote_Backup_Client.dir/Client.cpp.o: CMakeFiles/Remote_Backup_Client.dir/flags.make
+CMakeFiles/Remote_Backup_Client.dir/Client.cpp.o: ../Client.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/Remote_Backup_Client.dir/Client.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Remote_Backup_Client.dir/Client.cpp.o -c /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/Client.cpp
+
+CMakeFiles/Remote_Backup_Client.dir/Client.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Remote_Backup_Client.dir/Client.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/Client.cpp > CMakeFiles/Remote_Backup_Client.dir/Client.cpp.i
+
+CMakeFiles/Remote_Backup_Client.dir/Client.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Remote_Backup_Client.dir/Client.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/Client.cpp -o CMakeFiles/Remote_Backup_Client.dir/Client.cpp.s
 
 # Object files for target Remote_Backup_Client
 Remote_Backup_Client_OBJECTS = \
 "CMakeFiles/Remote_Backup_Client.dir/main.cpp.o" \
-"CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.o"
+"CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.o" \
+"CMakeFiles/Remote_Backup_Client.dir/Client.cpp.o"
 
 # External object files for target Remote_Backup_Client
 Remote_Backup_Client_EXTERNAL_OBJECTS =
 
 Remote_Backup_Client: CMakeFiles/Remote_Backup_Client.dir/main.cpp.o
 Remote_Backup_Client: CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.o
+Remote_Backup_Client: CMakeFiles/Remote_Backup_Client.dir/Client.cpp.o
 Remote_Backup_Client: CMakeFiles/Remote_Backup_Client.dir/build.make
 Remote_Backup_Client: CMakeFiles/Remote_Backup_Client.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/danieleleto/CLionProjects/Remote_Backup_Client/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking CXX executable Remote_Backup_Client"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable Remote_Backup_Client"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/Remote_Backup_Client.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -128,6 +143,6 @@ CMakeFiles/Remote_Backup_Client.dir/clean:
 .PHONY : CMakeFiles/Remote_Backup_Client.dir/clean
 
 CMakeFiles/Remote_Backup_Client.dir/depend:
-	cd /Users/danieleleto/CLionProjects/Remote_Backup_Client/cmake-build-debug && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /Users/danieleleto/CLionProjects/Remote_Backup_Client /Users/danieleleto/CLionProjects/Remote_Backup_Client /Users/danieleleto/CLionProjects/Remote_Backup_Client/cmake-build-debug /Users/danieleleto/CLionProjects/Remote_Backup_Client/cmake-build-debug /Users/danieleleto/CLionProjects/Remote_Backup_Client/cmake-build-debug/CMakeFiles/Remote_Backup_Client.dir/DependInfo.cmake --color=$(COLOR)
+	cd /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug/CMakeFiles/Remote_Backup_Client.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/Remote_Backup_Client.dir/depend
 

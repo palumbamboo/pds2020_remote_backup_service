@@ -1,9 +1,10 @@
 #include <iostream>
 #include "FileWatcher.h"
+#include "Client.h"
 
-int main() {
+void runFileWatcher(std::string path_to_watch) {
     // Create a FileWatcher instance that will check the current folder for changes every 5 seconds
-    FileWatcher fw{"./", std::chrono::milliseconds(1000)};
+    FileWatcher fw{path_to_watch, std::chrono::milliseconds(1000)};
 
     // Start monitoring a folder for changes and (in case of changes)
     // run a user provided lambda function
@@ -28,3 +29,41 @@ int main() {
         }
     });
 }
+
+
+int main(int argc, char* argv[]) {
+
+    if (argc != 3) {
+        std::cerr << "Usage: client <address> <port>\n";
+        return 1;
+    }
+
+    auto address = argv[1];
+    auto port = argv[2];
+    std::string path_to_watch = "./";
+
+    //TODO: control the path, if not exists -> raise exception
+    std::thread tfw(runFileWatcher, path_to_watch);
+    tfw.detach();
+
+    while (true) {
+
+    }
+
+    try {
+        std::cout << "try phase" << std::endl;
+        boost::asio::io_service ioService;
+        boost::asio::ip::tcp::resolver resolver(ioService);
+        boost::asio::ip::tcp::resolver::results_type endpointIterator = resolver.resolve(address, port);
+
+        //Client client(ioService, endpointIterator);
+
+        ioService.run();
+    }
+    catch (std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        std::cerr << "Exceptions!" << std::endl;
+    }
+}
+
+

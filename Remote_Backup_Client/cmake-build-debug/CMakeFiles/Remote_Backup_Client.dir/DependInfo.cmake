@@ -4,8 +4,9 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/Users/danieleleto/CLionProjects/Remote_Backup_Client/FileWatcher.cpp" "/Users/danieleleto/CLionProjects/Remote_Backup_Client/cmake-build-debug/CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.o"
-  "/Users/danieleleto/CLionProjects/Remote_Backup_Client/main.cpp" "/Users/danieleleto/CLionProjects/Remote_Backup_Client/cmake-build-debug/CMakeFiles/Remote_Backup_Client.dir/main.cpp.o"
+  "/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/Client.cpp" "/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug/CMakeFiles/Remote_Backup_Client.dir/Client.cpp.o"
+  "/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/FileWatcher.cpp" "/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug/CMakeFiles/Remote_Backup_Client.dir/FileWatcher.cpp.o"
+  "/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/main.cpp" "/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug/CMakeFiles/Remote_Backup_Client.dir/main.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "AppleClang")
 
