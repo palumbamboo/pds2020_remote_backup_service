@@ -2,7 +2,7 @@
 #include "FileWatcher.h"
 #include "Client.h"
 
-void runFileWatcher(std::string path_to_watch) {
+void run_file_watcher(std::string path_to_watch) {
     try {
         // Create a FileWatcher instance that will check the current folder for changes every 5 seconds
         FileWatcher fw{path_to_watch, std::chrono::milliseconds(1000)};
@@ -55,21 +55,23 @@ int main(int argc, char* argv[]) {
     std::string path_to_watch = "./";
 
     //TODO: control the path, if not exists -> raise exception
-    std::thread tfw(runFileWatcher, path_to_watch);
+    std::thread tfw(run_file_watcher, path_to_watch);
     tfw.detach();
 
     try {
         boost::asio::io_service ioService;
-        boost::asio::ip::tcp::resolver resolver(ioService);
-        boost::asio::ip::tcp::resolver::results_type endpointIterator = resolver.resolve(address, port);
+        tcp::resolver resolver(ioService);
+        tcp::resolver::results_type endpointIterator = resolver.resolve(address, port);
 
         Client client(ioService, endpointIterator);
 
+        std::string message = "Hello from Client!\n";
+        client.write_buffer(message);
+
         ioService.run();
 
-        for(;;) {
+        //TODO - asio.misc:2 error to correct, too much data on the buffer
 
-        }
     }
     catch (std::exception& e) {
         std::cerr << e.what() << std::endl;

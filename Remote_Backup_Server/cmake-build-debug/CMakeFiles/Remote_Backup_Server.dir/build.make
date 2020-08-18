@@ -90,17 +90,47 @@ CMakeFiles/Remote_Backup_Server.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Remote_Backup_Server.dir/main.cpp.s"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/main.cpp -o CMakeFiles/Remote_Backup_Server.dir/main.cpp.s
 
+CMakeFiles/Remote_Backup_Server.dir/Server.cpp.o: CMakeFiles/Remote_Backup_Server.dir/flags.make
+CMakeFiles/Remote_Backup_Server.dir/Server.cpp.o: ../Server.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/Remote_Backup_Server.dir/Server.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Remote_Backup_Server.dir/Server.cpp.o -c /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/Server.cpp
+
+CMakeFiles/Remote_Backup_Server.dir/Server.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Remote_Backup_Server.dir/Server.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/Server.cpp > CMakeFiles/Remote_Backup_Server.dir/Server.cpp.i
+
+CMakeFiles/Remote_Backup_Server.dir/Server.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Remote_Backup_Server.dir/Server.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/Server.cpp -o CMakeFiles/Remote_Backup_Server.dir/Server.cpp.s
+
+CMakeFiles/Remote_Backup_Server.dir/Session.cpp.o: CMakeFiles/Remote_Backup_Server.dir/flags.make
+CMakeFiles/Remote_Backup_Server.dir/Session.cpp.o: ../Session.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/Remote_Backup_Server.dir/Session.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Remote_Backup_Server.dir/Session.cpp.o -c /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/Session.cpp
+
+CMakeFiles/Remote_Backup_Server.dir/Session.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Remote_Backup_Server.dir/Session.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/Session.cpp > CMakeFiles/Remote_Backup_Server.dir/Session.cpp.i
+
+CMakeFiles/Remote_Backup_Server.dir/Session.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Remote_Backup_Server.dir/Session.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/Session.cpp -o CMakeFiles/Remote_Backup_Server.dir/Session.cpp.s
+
 # Object files for target Remote_Backup_Server
 Remote_Backup_Server_OBJECTS = \
-"CMakeFiles/Remote_Backup_Server.dir/main.cpp.o"
+"CMakeFiles/Remote_Backup_Server.dir/main.cpp.o" \
+"CMakeFiles/Remote_Backup_Server.dir/Server.cpp.o" \
+"CMakeFiles/Remote_Backup_Server.dir/Session.cpp.o"
 
 # External object files for target Remote_Backup_Server
 Remote_Backup_Server_EXTERNAL_OBJECTS =
 
 Remote_Backup_Server: CMakeFiles/Remote_Backup_Server.dir/main.cpp.o
+Remote_Backup_Server: CMakeFiles/Remote_Backup_Server.dir/Server.cpp.o
+Remote_Backup_Server: CMakeFiles/Remote_Backup_Server.dir/Session.cpp.o
 Remote_Backup_Server: CMakeFiles/Remote_Backup_Server.dir/build.make
 Remote_Backup_Server: CMakeFiles/Remote_Backup_Server.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable Remote_Backup_Server"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable Remote_Backup_Server"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/Remote_Backup_Server.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

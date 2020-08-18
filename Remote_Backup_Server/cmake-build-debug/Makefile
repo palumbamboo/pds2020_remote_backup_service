@@ -143,6 +143,60 @@ Remote_Backup_Server/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Remote_Backup_Server.dir/build.make CMakeFiles/Remote_Backup_Server.dir/build
 .PHONY : Remote_Backup_Server/fast
 
+Server.o: Server.cpp.o
+
+.PHONY : Server.o
+
+# target to build an object file
+Server.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Remote_Backup_Server.dir/build.make CMakeFiles/Remote_Backup_Server.dir/Server.cpp.o
+.PHONY : Server.cpp.o
+
+Server.i: Server.cpp.i
+
+.PHONY : Server.i
+
+# target to preprocess a source file
+Server.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Remote_Backup_Server.dir/build.make CMakeFiles/Remote_Backup_Server.dir/Server.cpp.i
+.PHONY : Server.cpp.i
+
+Server.s: Server.cpp.s
+
+.PHONY : Server.s
+
+# target to generate assembly for a file
+Server.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Remote_Backup_Server.dir/build.make CMakeFiles/Remote_Backup_Server.dir/Server.cpp.s
+.PHONY : Server.cpp.s
+
+Session.o: Session.cpp.o
+
+.PHONY : Session.o
+
+# target to build an object file
+Session.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Remote_Backup_Server.dir/build.make CMakeFiles/Remote_Backup_Server.dir/Session.cpp.o
+.PHONY : Session.cpp.o
+
+Session.i: Session.cpp.i
+
+.PHONY : Session.i
+
+# target to preprocess a source file
+Session.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Remote_Backup_Server.dir/build.make CMakeFiles/Remote_Backup_Server.dir/Session.cpp.i
+.PHONY : Session.cpp.i
+
+Session.s: Session.cpp.s
+
+.PHONY : Session.s
+
+# target to generate assembly for a file
+Session.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Remote_Backup_Server.dir/build.make CMakeFiles/Remote_Backup_Server.dir/Session.cpp.s
+.PHONY : Session.cpp.s
+
 main.o: main.cpp.o
 
 .PHONY : main.o
@@ -179,6 +233,12 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... Remote_Backup_Server"
+	@echo "... Server.o"
+	@echo "... Server.i"
+	@echo "... Server.s"
+	@echo "... Session.o"
+	@echo "... Session.i"
+	@echo "... Session.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"

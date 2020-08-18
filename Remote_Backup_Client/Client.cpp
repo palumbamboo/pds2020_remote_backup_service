@@ -5,13 +5,13 @@
 #include "Client.h"
 
 Client::Client(boost::asio::io_service& ioService,
-               boost::asio::ip::tcp::resolver::results_type endpointIterator) :
-               socket(ioService),
-               endpointIterator(std::move(endpointIterator)) {
-    callConnect();
+               tcp::resolver::results_type endpointIterator) :
+               socket{ioService},
+               endpointIterator{std::move(endpointIterator)} {
+    call_connect();
 }
 
-void Client::callConnect() {
+void Client::call_connect() {
     boost::asio::connect(socket, endpointIterator);
     boost::asio::async_connect(socket, endpointIterator,
                                [this](const boost::system::error_code& ec,
@@ -36,4 +36,19 @@ void Client::callConnect() {
         }
     });
 }
+
+void Client::write_buffer(std::string buffer) {
+    auto buf = boost::asio::buffer(buffer, buffer.length());
+    boost::asio::async_write(socket, buf,
+                             [this] (boost::system::error_code ec, size_t length)
+                             {
+                                 if(!ec) {
+                                     std::cout << "Fatto.." << std::endl;
+                                 } else {
+                                     std::cerr << "Errore.. " << ec << std::endl;
+                                 }
+                             });
+
+}
+
 

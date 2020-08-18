@@ -8,16 +8,19 @@
 #include <boost/asio.hpp>
 
 using boost::asio::ip::tcp;
+enum {MaxLength = 4096};
 
 class Client {
 private:
     tcp::socket socket;
     tcp::resolver::results_type endpointIterator;
-    enum { MaxLength = 4096 };
+
     std::array<char, MaxLength> buffer;
 
 public:
+
     Client(boost::asio::io_service& ioService,
            tcp::resolver::results_type endpointIterator);
-    void callConnect();
+    void call_connect();
+    void write_buffer(std::string buffer);
 };

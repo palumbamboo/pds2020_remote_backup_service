@@ -4,12 +4,15 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
+  "/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/Server.cpp" "/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/cmake-build-debug/CMakeFiles/Remote_Backup_Server.dir/Server.cpp.o"
+  "/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/Session.cpp" "/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/cmake-build-debug/CMakeFiles/Remote_Backup_Server.dir/Session.cpp.o"
   "/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/main.cpp" "/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/cmake-build-debug/CMakeFiles/Remote_Backup_Server.dir/main.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "AppleClang")
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
+  "/usr/local/include"
   )
 
 # Targets to which this target links.
