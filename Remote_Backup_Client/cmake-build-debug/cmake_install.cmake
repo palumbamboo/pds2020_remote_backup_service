@@ -1,4 +1,4 @@
-# Install script for directory: /Users/danieleleto/CLionProjects/Remote_Backup_Client
+# Install script for directory: /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -40,5 +40,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/Users/danieleleto/CLionProjects/Remote_Backup_Client/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

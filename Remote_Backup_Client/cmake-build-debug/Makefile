@@ -68,10 +68,10 @@ RM = /Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/danieleleto/CLionProjects/Remote_Backup_Client
+CMAKE_SOURCE_DIR = /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/danieleleto/CLionProjects/Remote_Backup_Client/cmake-build-debug
+CMAKE_BINARY_DIR = /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -100,9 +100,9 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/danieleleto/CLionProjects/Remote_Backup_Client/cmake-build-debug/CMakeFiles /Users/danieleleto/CLionProjects/Remote_Backup_Client/cmake-build-debug/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug/CMakeFiles /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug/CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/danieleleto/CLionProjects/Remote_Backup_Client/cmake-build-debug/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -142,6 +142,33 @@ Remote_Backup_Client: cmake_check_build_system
 Remote_Backup_Client/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Remote_Backup_Client.dir/build.make CMakeFiles/Remote_Backup_Client.dir/build
 .PHONY : Remote_Backup_Client/fast
+
+Client.o: Client.cpp.o
+
+.PHONY : Client.o
+
+# target to build an object file
+Client.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Remote_Backup_Client.dir/build.make CMakeFiles/Remote_Backup_Client.dir/Client.cpp.o
+.PHONY : Client.cpp.o
+
+Client.i: Client.cpp.i
+
+.PHONY : Client.i
+
+# target to preprocess a source file
+Client.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Remote_Backup_Client.dir/build.make CMakeFiles/Remote_Backup_Client.dir/Client.cpp.i
+.PHONY : Client.cpp.i
+
+Client.s: Client.cpp.s
+
+.PHONY : Client.s
+
+# target to generate assembly for a file
+Client.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Remote_Backup_Client.dir/build.make CMakeFiles/Remote_Backup_Client.dir/Client.cpp.s
+.PHONY : Client.cpp.s
 
 FileWatcher.o: FileWatcher.cpp.o
 
@@ -206,6 +233,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... Remote_Backup_Client"
+	@echo "... Client.o"
+	@echo "... Client.i"
+	@echo "... Client.s"
 	@echo "... FileWatcher.o"
 	@echo "... FileWatcher.i"
 	@echo "... FileWatcher.s"
