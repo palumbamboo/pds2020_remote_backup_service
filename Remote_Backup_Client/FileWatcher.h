@@ -10,6 +10,8 @@
 #include <unordered_map>
 #include <string>
 #include <functional>
+#include <iostream>
+#include <sys/stat.h>
 
 // Define available file changes
 enum class FileStatus {created, modified, erased};

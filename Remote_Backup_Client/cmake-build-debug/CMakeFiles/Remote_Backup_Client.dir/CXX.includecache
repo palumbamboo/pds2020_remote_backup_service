@@ -25,6 +25,10 @@ string
 -
 functional
 -
+iostream
+-
+sys/stat.h
+-
 
 /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/main.cpp
 iostream
