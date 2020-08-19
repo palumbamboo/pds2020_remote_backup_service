@@ -1,3 +1,0 @@
-/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/cmake-build-debug/CMakeFiles/Remote_Backup_Client.dir
