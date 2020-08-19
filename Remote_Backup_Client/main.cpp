@@ -37,6 +37,23 @@ void run_file_watcher(std::string path_to_watch) {
     }
 }
 
+void scan_directory(std::string path_to_watch) {
+    for(auto itEntry = std::filesystem::recursive_directory_iterator(path_to_watch);
+        itEntry != std::filesystem::recursive_directory_iterator();
+        ++itEntry ) {
+        const auto filenameStr = itEntry->path().filename().string();
+        std::cout << std::setw(itEntry.depth()*3) << "";
+        if (itEntry->is_directory()) {
+            std::cout << "dir:  " << filenameStr << '\n';
+        }
+        else if (itEntry->is_regular_file()) {
+            std::cout << "file: " << filenameStr << '\n';
+        }
+        else
+            std::cout << "??    " << filenameStr << '\n';
+    }
+}
+
 
 int main(int argc, char* argv[]) {
     /*
@@ -64,6 +81,8 @@ int main(int argc, char* argv[]) {
         tcp::resolver::results_type endpointIterator = resolver.resolve(address, port);
 
         Client client(ioService, endpointIterator);
+
+        scan_directory(path_to_watch);
 
         ioService.run();
 
