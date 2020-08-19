@@ -65,9 +65,6 @@ int main(int argc, char* argv[]) {
 
         Client client(ioService, endpointIterator);
 
-        std::string message = "Hello from Client!\n";
-        client.write_buffer(message);
-
         ioService.run();
 
         //TODO - asio.misc:2 error to correct, too much data on the buffer

@@ -6,9 +6,19 @@
 
 #IncludeRegexTransform: 
 
-/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/Session.cpp
+/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/Server.cpp
+Server.h
+/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/Server.h
 Session.h
 /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/Session.h
+
+/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/Server.h
+iostream
+-
+boost/asio.hpp
+-
+filesystem
+-
 
 /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/Session.h
 iostream
@@ -17,6 +27,12 @@ boost/asio.hpp
 -
 filesystem
 -
+
+/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/main.cpp
+iostream
+-
+Server.h
+/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Server/Server.h
 
 /usr/local/include/boost/array.hpp
 boost/detail/workaround.hpp

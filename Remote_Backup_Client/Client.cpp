@@ -40,7 +40,7 @@ void Client::call_connect() {
 void Client::write_buffer(std::string buffer) {
     auto buf = boost::asio::buffer(buffer, buffer.length());
     boost::asio::async_write(socket, buf,
-                             [this] (boost::system::error_code ec, size_t length)
+                             [this] (boost::system::error_code ec, size_t /*length*/)
                              {
                                  if(!ec) {
                                      std::cout << "Fatto.." << std::endl;
