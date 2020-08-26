@@ -6,37 +6,15 @@
 
 #IncludeRegexTransform: 
 
+/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/Client.cpp
+Client.h
+/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/Client.h
+
 /Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/Client.h
 iostream
 -
 boost/asio.hpp
 -
-
-/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/FileWatcher.h
-filesystem
--
-chrono
--
-thread
--
-unordered_map
--
-string
--
-functional
--
-iostream
--
-sys/stat.h
--
-
-/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/main.cpp
-iostream
--
-FileWatcher.h
-/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/FileWatcher.h
-Client.h
-/Users/danieleleto/CLionProjects/pds2020_remote_backup_service/Remote_Backup_Client/Client.h
 
 /usr/local/include/boost/array.hpp
 boost/detail/workaround.hpp

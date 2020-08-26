@@ -7,12 +7,10 @@
 
 void Server::callAccept() {
     acceptor.async_accept(socket,
-                          [this](boost::system::error_code ec)
-                          {
+                          [this](boost::system::error_code ec) {
                               if (!ec) {
                                   std::make_shared<Session>(std::move(socket))->start();
                               }
-
                               callAccept();
                           });
 }
@@ -28,7 +26,7 @@ void Server::createLocalDirectory()
 Server::Server(boost::asio::io_service& ioService, short t_port) :
                 socket{ioService}, acceptor{ioService, tcp::endpoint(tcp::v4(), t_port)} {
     std::cout << "Server started\n";
-    createLocalDirectory();
+    //createLocalDirectory();
 
     callAccept();
 }

@@ -42,6 +42,7 @@ void scan_directory(std::string path_to_watch) {
         itEntry != std::filesystem::recursive_directory_iterator();
         ++itEntry ) {
         const auto filenameStr = itEntry->path().filename().string();
+        std::cout << filenameStr << std::endl;
         std::cout << std::setw(itEntry.depth()*3) << "";
         if (itEntry->is_directory()) {
             std::cout << "dir:  " << filenameStr << '\n';
@@ -85,8 +86,6 @@ int main(int argc, char* argv[]) {
         scan_directory(path_to_watch);
 
         ioService.run();
-
-        //TODO - asio.misc:2 error to correct, too much data on the buffer
 
     }
     catch (std::exception& e) {

@@ -11,23 +11,20 @@ Client::Client(boost::asio::io_service& ioService,
     call_connect();
 }
 
+Client::~Client() {
+    std::cout << "Distructor called" << std::endl;
+    socket.close();
+}
+
 void Client::call_connect() {
     boost::asio::connect(socket, endpointIterator);
-    boost::asio::async_connect(socket, endpointIterator,
-                               [this](const boost::system::error_code& ec,
-                                      const tcp::endpoint& endpoint) {
+    boost::asio::async_connect(socket,
+                               endpointIterator,
+                               [this] (boost::system::error_code ec, const tcp::endpoint& endpoint) {
         if(!ec) {
             std::cout << "Connected" << std::endl;
-            socket.async_read_some(boost::asio::buffer(buffer.data(), buffer.size()),
-                                     [this](boost::system::error_code ec, size_t bytes)
-                                     {
-                                         if (!ec) {
-                                             std::cout.write(buffer.data(), bytes);
-                                         }
-                                         else {
-                                             std::cout << ec << std::endl;
-                                         }
-                                     });
+            std::string message = "Ciao\n";
+            write_buffer(message);
         }
         else {
             std::cout << ec << std::endl;
@@ -37,13 +34,15 @@ void Client::call_connect() {
     });
 }
 
-void Client::write_buffer(std::string buffer) {
-    auto buf = boost::asio::buffer(buffer, buffer.length());
-    boost::asio::async_write(socket, buf,
+void Client::write_buffer(std::string buf) {
+    auto bufs = boost::asio::buffer(buf);
+    boost::asio::async_write(socket,
+                             bufs,
                              [this] (boost::system::error_code ec, size_t /*length*/)
                              {
                                  if(!ec) {
                                      std::cout << "Fatto.." << std::endl;
+                                     //call_write_file(ec);
                                  } else {
                                      std::cerr << "Errore.. " << ec << std::endl;
                                  }
@@ -51,4 +50,29 @@ void Client::write_buffer(std::string buffer) {
 
 }
 
+/*
+void Client::call_write_file(const boost::system::error_code& ec)
+{
+    if (!ec) {
+        if (m_sourceFile) {
+            m_sourceFile.read(m_buf.data(), m_buf.size());
+            if (m_sourceFile.fail() && !m_sourceFile.eof()) {
+                auto msg = "Failed while reading file";
+                BOOST_LOG_TRIVIAL(error) << msg;
+                throw std::fstream::failure(msg);
+            }
+            std::stringstream ss;
+            ss << "Send " << m_sourceFile.gcount() << " bytes, total: "
+               << m_sourceFile.tellg() << " bytes";
+            BOOST_LOG_TRIVIAL(trace) << ss.str();
+            std::cout << ss.str() << std::endl;
 
+            auto buf = boost::asio::buffer(m_buf.data(), static_cast<size_t>(m_sourceFile.gcount()));
+            writeBuffer(buf);
+        }
+    } else {
+        BOOST_LOG_TRIVIAL(error) << "Error: " << t_ec.message();
+    }
+}
+
+*/
