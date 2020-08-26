@@ -94,3 +94,5 @@ cmake-build-*/
 .idea/**/dbnavigator.xml
 
 .idea
+.Remote_Backup_Client/idea
+.Remote_Backup_Server/idea
