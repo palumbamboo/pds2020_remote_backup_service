@@ -92,3 +92,7 @@ cmake-build-*/
 .idea/**/dynamic.xml
 .idea/**/uiDesigner.xml
 .idea/**/dbnavigator.xml
+
+.idea
+.Remote_Backup_Client/idea
+.Remote_Backup_Server/idea
