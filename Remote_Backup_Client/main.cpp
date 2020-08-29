@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
 
         Client client(ioService, endpointIterator);
 
-        scan_directory(path_to_watch);
+        //scan_directory(path_to_watch);
 
         ioService.run();
 
