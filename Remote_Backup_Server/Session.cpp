@@ -97,11 +97,12 @@ void Session::doReadFileContent(size_t t_bytesTransferred)
         std::cout << " recv " << m_outputFile.tellp() << " bytes";
 
         if (m_outputFile.tellp() >= static_cast<std::streamsize>(m_fileSize)) {
-            std::cout << "Received file: " << m_fileName << std::endl;
+            std::cout << "\nReceived file: " << m_fileName << std::endl;
             return;
         }
     }
     auto self = shared_from_this();
+
     socket.async_read_some(boost::asio::buffer(m_buf.data(), m_buf.size()),
                              [this, self](boost::system::error_code ec, size_t bytes)
                              {
@@ -114,16 +115,20 @@ void Session::processRead(size_t t_bytesTransferred)
     std::istream requestStream(&m_requestBuf_);
     readData(requestStream);
 
-    std::cout << "m_fileName after: " << m_fileName << std::endl;
-    /*
-    auto pos = m_fileName.find_last_of("/\\");
-    if (pos != std::string::npos) {
-        std::cout << "m_fileName before: " << m_fileName << std::endl;
-        m_fileName = m_fileName.substr(pos + 1);
-
-
+    if (m_task == "DEL") {
+        if (std::filesystem::remove(m_fileName)) {
+            std::cout << "Error during removing.. " << m_fileName << std::endl;
+        } else
+            std::cout << "Success! Removed.. " << m_fileName << std::endl;
+        return;
+    } else if (m_task != "GET") {
+        std::cout << "Errore! No GET or DEL task!" << std::endl;
+        return;
     }
-    */
+
+    std::cout << "m_fileName after: " << m_fileName << std::endl;
+
+
     if (createFile() == -1)
         return;
 
@@ -150,10 +155,12 @@ void Session::processRead(size_t t_bytesTransferred)
 
 void Session::readData(std::istream &stream)
 {
+    stream >> m_task;
     stream >> m_fileName;
     stream >> m_fileSize;
-    stream.read(m_buf.data(), 2);
+    stream.read(m_buf.data(), 3);
 
+    std::cout << m_task << " to do!" << std::endl;
     std::cout << m_fileName << " size is " << m_fileSize
                  << ", tellg = " << stream.tellg() << std::endl;
 

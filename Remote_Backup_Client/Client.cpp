@@ -4,14 +4,42 @@
 
 #include "Client.h"
 
+std::mutex mutex;
+std::queue<std::string> path_to_send;
+std::condition_variable cv;
+
 Client::Client(boost::asio::io_service& ioService,
-               tcp::resolver::results_type endpointIterator) :
+               tcp::resolver::results_type endpointIterator,
+               bool erase) :
                socket{ioService},
                endpointIterator{std::move(endpointIterator)} {
-    call_connect();
-    std::cout << "HERE" << std::endl;
-    m_path = "../files_to_send/Sicurezza.zip";
-    openFile(m_path);
+    if (!erase) {
+        call_connect();
+        std::cout << "HERE" << std::endl;
+        std::unique_lock<std::mutex> ul(mutex);
+        cv.wait(ul, []() { return !path_to_send.empty(); });
+        if (!path_to_send.empty()) {
+            std::string next_path = path_to_send.front();
+            path_to_send.pop();
+            openFile(next_path);
+        }
+    } else {
+        call_connect_erase();
+
+        std::unique_lock<std::mutex> ul(mutex);
+        cv.wait(ul, []() { return !path_to_send.empty(); });
+        if (!path_to_send.empty()) {
+            std::string next_path = path_to_send.front();
+            path_to_send.pop();
+            std::ostream requestStream(&m_request);
+            std::string p(next_path);
+            p.erase(remove_if(p.begin(), p.end(), isspace), p.end());
+            std::cout << "t_path TRIMMED: " << p << std::endl;
+            std::cout << p << std::endl;
+            requestStream << "DEL " << p << "\n" << 0 << "\n\n";
+            std::cout << "DEL " << p << "\n" << 0 << "\n\n";
+        }
+    }
 }
 
 Client::~Client() {
@@ -20,47 +48,51 @@ Client::~Client() {
 }
 
 void Client::call_connect() {
+    std::cout << "call_connect" << std::endl;
     boost::asio::async_connect(socket,
                                endpointIterator,
-                               [this] (boost::system::error_code ec, const tcp::endpoint& endpoint) {
-        if(!ec) {
-            std::cout << "Connected" << std::endl;
-            //std::string message = "Ciao \n20\n\n";
-            writeBuffer(m_request);
-        }
-        else {
-            std::cout << ec << std::endl;
-            std::cout << "Coudn't connect to host. Please run server "
-                         "or check network connection." << std::endl;
-        }
+                               [this] (boost::system::error_code ec, const tcp::endpoint& endpoint)
+                               {
+                                if(!ec) {
+                                    std::cout << "Connected" << std::endl;
+                                    writeBuffer(m_request);
+                                }
+                                else {
+                                    std::cout << ec << std::endl;
+                                    std::cout << "Coudn't connect to host. Please run server "
+                                                 "or check network connection." << std::endl;
+                                }
     });
 }
-/*
-void Client::write_buffer(std::string buf) {
-    std::ostream request_stream(&request);
-    request_stream << buf;
-    std::cout << "Write buffer ->" << buf << std::endl;
-    boost::asio::async_write(socket,
-                             request,
-                             [this] (boost::system::error_code ec, size_t) //length)
-                             {
-                                 if(!ec) {
-                                     std::cout << "Fatto.." << std::endl;
-                                     doWriteFile(ec);
-                                 } else {
-                                     std::cerr << "Errore.. " << ec << std::endl;
-                                 }
-                             });
 
+void Client::call_connect_erase() {
+    std::cout << "call_connect ERASE" << std::endl;
+    boost::asio::async_connect(socket,
+                               endpointIterator,
+                               [this] (boost::system::error_code ec, const tcp::endpoint& endpoint)
+                               {
+                                   if(!ec) {
+                                       std::cout << "Connected" << std::endl;
+                                       writeBufferErase(m_request);
+                                   }
+                                   else {
+                                       std::cout << ec << std::endl;
+                                       std::cout << "Coudn't connect to host. Please run server "
+                                                    "or check network connection." << std::endl;
+                                   }
+                               });
 }
-*/
 
-void Client::openFile(std::string const& t_path)
+void Client::openFile(std::string& t_path)
 {
+    std::cout << "t_path " << t_path << std::endl;
+
     m_sourceFile.open(t_path, std::ios_base::binary | std::ios_base::ate);
     if (m_sourceFile.fail())
-        throw std::fstream::failure("Failed while opening file " + t_path);
+        throw std::fstream::failure("Failed while opening file " + t_path + "\n");
 
+    t_path.erase(remove_if(t_path.begin(), t_path.end(), isspace), t_path.end());
+    std::cout << "t_path TRIMMED: " << t_path << std::endl;
     m_sourceFile.seekg(0, m_sourceFile.end);
     auto fileSize = m_sourceFile.tellg();
     m_sourceFile.seekg(0, m_sourceFile.beg);
@@ -69,8 +101,8 @@ void Client::openFile(std::string const& t_path)
     std::filesystem::path p(t_path);
     std::cout << p.string() << std::endl;
     std::cout << "p.filename().string() :" << p.filename().string() << std::endl;
-    requestStream << p.string() << "\n" << fileSize << "\n\n";
-    std::cout << p.string() << "\n" << fileSize << "\n\n";
+    requestStream << "GET " << p.string() << "\n" << fileSize << "\n\n";
+    std::cout << "GET " << p.string() << "\n" << fileSize << "\n\n";
 }
 
 void Client::doWriteFile(const boost::system::error_code& t_ec)
@@ -95,6 +127,10 @@ void Client::doWriteFile(const boost::system::error_code& t_ec)
     } else {
         std::cout << "Error: " << t_ec.message();
     }
+}
+
+void Client::eraseFile(const boost::system::error_code& t_ec) {
+
 }
 
 

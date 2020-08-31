@@ -20,8 +20,7 @@ private:
     std::filesystem::path m_fileName;
     std::ofstream m_outputFile;
     size_t m_fileSize;
-
-
+    std::string m_task;
 
     void call_read();
     void call_write(std::size_t length);
