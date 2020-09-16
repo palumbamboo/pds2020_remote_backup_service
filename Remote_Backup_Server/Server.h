@@ -18,6 +18,4 @@ private:
 public:
     Server(boost::asio::io_service& ioService, short t_port);
     void callAccept();
-    void createLocalDirectory();
-
 };

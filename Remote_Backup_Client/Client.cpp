@@ -5,10 +5,7 @@
 #include <filesystem>
 #include "Client.h"
 
-std::mutex mutex;
-std::queue<std::string> path_to_send;
-std::condition_variable cv;
-
+/*
 Client::Client(boost::asio::io_service& ioService,
                tcp::resolver::results_type endpointIterator,
                bool erase) :
@@ -42,6 +39,23 @@ Client::Client(boost::asio::io_service& ioService,
         }
     }
 }
+*/
+
+Client::Client(boost::asio::io_service& ioService,
+               tcp::resolver::results_type endpointIterator,
+               const std::string & action) :
+        socket{ioService},
+        endpointIterator{std::move(endpointIterator)} {
+    std::string delimiter = " ";
+    std::string command = action.substr(0, action.find(delimiter));
+    std::string path    = action.substr(action.find(delimiter)+1, action.length());
+    if(command != "DEL") {
+        openFile(path);
+    } else {
+        openDeleteFile(path);
+    }
+    call_connect();
+}
 
 Client::~Client() {
     std::cout << "Distructor called" << std::endl;
@@ -66,24 +80,6 @@ void Client::call_connect() {
     });
 }
 
-void Client::call_connect_erase() {
-    std::cout << "call_connect ERASE" << std::endl;
-    boost::asio::async_connect(socket,
-                               endpointIterator,
-                               [this] (boost::system::error_code ec, const tcp::endpoint& endpoint)
-                               {
-                                   if(!ec) {
-                                       std::cout << "Connected" << std::endl;
-                                       writeBufferErase(m_request);
-                                   }
-                                   else {
-                                       std::cout << ec << std::endl;
-                                       std::cout << "Coudn't connect to host. Please run server "
-                                                    "or check network connection." << std::endl;
-                                   }
-                               });
-}
-
 void Client::openFile(std::string& t_path)
 {
     std::cout << "t_path " << t_path << std::endl;
@@ -104,6 +100,19 @@ void Client::openFile(std::string& t_path)
     std::cout << "p.filename().string() :" << p.filename().string() << std::endl;
     requestStream << "GET " << p.string() << "\n" << fileSize << "\n\n";
     std::cout << "GET " << p.string() << "\n" << fileSize << "\n\n";
+}
+
+void Client::openDeleteFile(std::string& t_path)
+{
+    std::cout << "t_path " << t_path << std::endl;
+    t_path.erase(remove_if(t_path.begin(), t_path.end(), isspace), t_path.end());
+    std::cout << "t_path TRIMMED: " << t_path << std::endl;
+    std::ostream requestStream(&m_request);
+    std::filesystem::path p(t_path);
+    std::cout << p.string() << std::endl;
+    std::cout << "p.filename().string() :" << p.filename().string() << std::endl;
+    requestStream << "DEL " << p.string() << "\n" << 0 << "\n\n";
+    std::cout << "DEL " << p.string() << "\n" << 0 << "\n\n";
 }
 
 void Client::doWriteFile(const boost::system::error_code& t_ec)
@@ -129,10 +138,3 @@ void Client::doWriteFile(const boost::system::error_code& t_ec)
         std::cout << "Error: " << t_ec.message();
     }
 }
-
-void Client::eraseFile(const boost::system::error_code& t_ec) {
-
-}
-
-
-

@@ -116,7 +116,7 @@ void Session::processRead(size_t t_bytesTransferred)
     readData(requestStream);
 
     if (m_task == "DEL") {
-        if (std::filesystem::remove(m_fileName)) {
+        if (!std::filesystem::remove(m_fileName)) {
             std::cout << "Error during removing.. " << m_fileName << std::endl;
         } else
             std::cout << "Success! Removed.. " << m_fileName << std::endl;

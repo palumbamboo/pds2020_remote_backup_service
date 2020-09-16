@@ -12,4 +12,4 @@ if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
 
-add_executable(Remote_Backup_Client main.cpp FileWatcher.cpp FileWatcher.h Client.cpp Client.h)
+add_executable(Remote_Backup_Client main.cpp FileWatcher.cpp FileWatcher.h Client.cpp Client.h UploadQueue.cpp UploadQueue.h)
