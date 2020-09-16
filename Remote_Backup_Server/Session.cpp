@@ -7,9 +7,10 @@
 Session::Session(tcp::socket socket) : socket{std::move(socket)} {}
 
 void Session::start() {
-    call_read();
+    doRead();
 }
 
+/*
 void Session::call_read() {
 
     auto self(shared_from_this());
@@ -17,21 +18,150 @@ void Session::call_read() {
                            [this, self] (boost::system::error_code ec, std::size_t length)
                            {
                                 if(!ec) {
+                                    std::cout << "HERE SOPRA" << std::endl;
                                     std::cout.write(buffer.data(), MaxLength);
                                     call_write(length);
+                                } else {
+                                    std::cout << "ECCOMI SOPRA" << std::endl;
+                                    std::cout << ec << std::endl;
                                 }
                            }
     );
+
+    boost::asio::async_read(socket, m_requestBuf_,
+                                  [this, self] (boost::system::error_code ec, std::size_t length)
+                                  {
+                                      if(!ec) {
+                                          std::cout << "HERE" << std::endl;
+                                          //call_write(length);
+                                      } else {
+                                          std::cout << "ECCOMI"<<std::endl;
+                                          std::cout << ec << std::endl;
+                                      }
+
+                                  });
 }
 
 void Session::call_write(std::size_t length) {
     auto self(shared_from_this());
     boost::asio::async_write(socket,boost::asio::buffer(buffer, length),
-                        [this, self](boost::system::error_code ec, std::size_t /*length*/)
+                        [this, self](boost::system::error_code ec, std::size_t //length)
                         {
                             if(!ec) {
                                 call_read();
                             }
                         }
     );
+}
+*/
+
+void Session::doRead()
+{
+    auto self = shared_from_this();
+    async_read_until(socket, m_requestBuf_, "\n\n",
+                     [this, self](boost::system::error_code ec, size_t bytes)
+                     {
+                         if (!ec)
+                             processRead(bytes);
+                         else {
+                             std::cout << "HERE" << std::endl;
+                             std::cout << ec << std::endl;
+                             std::cout << ec.message() << std::endl;
+                         }
+                     });
+}
+
+int Session::createFile()
+{
+    std::filesystem::path root_name = m_fileName;
+    root_name.remove_filename();
+    std::cout << "m_fileName: " << m_fileName << std::endl;
+    std::cout << "root_name: " << root_name << std::endl;
+    m_fileName.filename();
+    std::cout << "m_fileName after: " << m_fileName << std::endl;
+    std::filesystem::create_directories(root_name);
+    m_outputFile.open(m_fileName, std::ios_base::binary);
+    if (!m_outputFile) {
+        std::cout <<  "Failed to create: " << m_fileName << std::endl;
+        std::flush(std::cout);
+        return -1;
+    }
+    return 0;
+}
+
+void Session::doReadFileContent(size_t t_bytesTransferred)
+{
+    if (t_bytesTransferred > 0) {
+        m_outputFile.write(m_buf.data(), static_cast<std::streamsize>(t_bytesTransferred));
+
+        std::cout << " recv " << m_outputFile.tellp() << " bytes";
+
+        if (m_outputFile.tellp() >= static_cast<std::streamsize>(m_fileSize)) {
+            std::cout << "\nReceived file: " << m_fileName << std::endl;
+            return;
+        }
+    }
+    auto self = shared_from_this();
+
+    socket.async_read_some(boost::asio::buffer(m_buf.data(), m_buf.size()),
+                             [this, self](boost::system::error_code ec, size_t bytes)
+                             {
+                                 doReadFileContent(bytes);
+                             });
+}
+
+void Session::processRead(size_t t_bytesTransferred)
+{
+    std::istream requestStream(&m_requestBuf_);
+    readData(requestStream);
+
+    if (m_task == "DEL") {
+        if (std::filesystem::remove(m_fileName)) {
+            std::cout << "Error during removing.. " << m_fileName << std::endl;
+        } else
+            std::cout << "Success! Removed.. " << m_fileName << std::endl;
+        return;
+    } else if (m_task != "GET") {
+        std::cout << "Errore! No GET or DEL task!" << std::endl;
+        return;
+    }
+
+    std::cout << "m_fileName after: " << m_fileName << std::endl;
+
+
+    if (createFile() == -1)
+        return;
+
+    // write extra bytes to file
+    do {
+        requestStream.read(m_buf.data(), m_buf.size());
+        std::cout << " write " << requestStream.gcount() << " bytes.";
+        m_outputFile.write(m_buf.data(), requestStream.gcount());
+    } while (requestStream.gcount() > 0);
+
+    auto self = shared_from_this();
+    socket.async_read_some(boost::asio::buffer(m_buf.data(), m_buf.size()),
+                             [this, self](boost::system::error_code ec, size_t bytes)
+                             {
+                                 if (!ec)
+                                     doReadFileContent(bytes);
+                                 else {
+                                     std::cout << "ERRORE!" << std::endl;
+                                     std::cout << ec.message() << std::endl;
+                                 }
+                             });
+}
+
+
+void Session::readData(std::istream &stream)
+{
+    stream >> m_task;
+    stream >> m_fileName;
+    stream >> m_fileSize;
+    stream.read(m_buf.data(), 3);
+
+    std::cout << m_task << " to do!" << std::endl;
+    std::cout << m_fileName << " size is " << m_fileSize
+                 << ", tellg = " << stream.tellg() << std::endl;
+
 }
