@@ -3,8 +3,11 @@
 #include "Client.h"
 #include "UploadQueue.h"
 #include "Message.h"
+#include <boost/uuid/detail/md5.hpp>
 
 #define CLIENTID 1234567890
+
+std::string computeFileHash(const std::filesystem::recursive_directory_iterator &itEntry);
 
 void createClientSend(Message& message, const std::string& address, const std::string& port) {
     boost::asio::io_service ioService;
@@ -74,12 +77,31 @@ void scan_directory(std::string path_to_watch, UploadQueue& queue) {
         else if (itEntry->is_regular_file()) {
             std::cout << "file: " << filenameStr << '\n';
             std::cout << "files to send: itEntry " << itEntry->path() << std::endl;
-            Message message(MessageCommand::CREATE, itEntry->path(), CLIENTID);
-            queue.pushMessage(message);
+            std::string hash = computeFileHash(itEntry);
+
+            // todo - implementare invio al server del checksum
+            if(checksum diverso) {
+                Message message(MessageCommand::CREATE, itEntry->path(), CLIENTID);
+                queue.pushMessage(message);
+            }
         }
         else
             std::cout << "??    " << filenameStr << '\n';
     }
+}
+
+std::string computeFileHash(const std::filesystem::recursive_directory_iterator &itEntry) {
+    std::ifstream file;
+    file.open(itEntry->path(), std::ios_base::binary | std::ios_base::ate);
+    if (file.fail())
+        throw std::fstream::failure("Failed while opening file " + itEntry->path().string() + "\n");
+
+    std::string s;
+    while(std::getline(file, s)) {
+        boost::uuids::detail::md5 hash;
+        hash.process_bytes(s.data(), s.size());
+    }
+    return s;
 }
 
 

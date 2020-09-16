@@ -9,7 +9,7 @@
 #include <filesystem>
 #include <utility>
 
-enum class MessageCommand {CREATE, DELETE};
+enum class MessageCommand {CREATE, DELETE, CHECKSUM_REQUEST, CHECKSUM_RESPONSE};
 
 class Message {
     std::filesystem::path path;
