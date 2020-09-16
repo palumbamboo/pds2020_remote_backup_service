@@ -5,54 +5,15 @@
 #include <filesystem>
 #include "Client.h"
 
-/*
 Client::Client(boost::asio::io_service& ioService,
                tcp::resolver::results_type endpointIterator,
-               bool erase) :
-               socket{ioService},
-               endpointIterator{std::move(endpointIterator)} {
-    if (!erase) {
-        call_connect();
-        std::cout << "HERE" << std::endl;
-        std::unique_lock<std::mutex> ul(mutex);
-        cv.wait(ul, []() { return !path_to_send.empty(); });
-        if (!path_to_send.empty()) {
-            std::string next_path = path_to_send.front();
-            path_to_send.pop();
-            openFile(next_path);
-        }
-    } else {
-        call_connect_erase();
-
-        std::unique_lock<std::mutex> ul(mutex);
-        cv.wait(ul, []() { return !path_to_send.empty(); });
-        if (!path_to_send.empty()) {
-            std::string next_path = path_to_send.front();
-            path_to_send.pop();
-            std::ostream requestStream(&m_request);
-            std::string p(next_path);
-            p.erase(remove_if(p.begin(), p.end(), isspace), p.end());
-            std::cout << "t_path TRIMMED: " << p << std::endl;
-            std::cout << p << std::endl;
-            requestStream << "DEL " << p << "\n" << 0 << "\n\n";
-            std::cout << "DEL " << p << "\n" << 0 << "\n\n";
-        }
-    }
-}
-*/
-
-Client::Client(boost::asio::io_service& ioService,
-               tcp::resolver::results_type endpointIterator,
-               const std::string & action) :
+               Message & message) :
         socket{ioService},
         endpointIterator{std::move(endpointIterator)} {
-    std::string delimiter = " ";
-    std::string command = action.substr(0, action.find(delimiter));
-    std::string path    = action.substr(action.find(delimiter)+1, action.length());
-    if(command != "DEL") {
-        openFile(path);
-    } else {
-        openDeleteFile(path);
+    if(message.getCommand() == MessageCommand::CREATE) {
+        openFile(message);
+    } else if(message.getCommand() == MessageCommand::DELETE){
+        openDeleteFile(message);
     }
     call_connect();
 }
@@ -80,8 +41,9 @@ void Client::call_connect() {
     });
 }
 
-void Client::openFile(std::string& t_path)
+void Client::openFile(Message& t_message)
 {
+    std::string t_path = t_message.getPath().string();
     std::cout << "t_path " << t_path << std::endl;
 
     m_sourceFile.open(t_path, std::ios_base::binary | std::ios_base::ate);
@@ -90,9 +52,9 @@ void Client::openFile(std::string& t_path)
 
     t_path.erase(remove_if(t_path.begin(), t_path.end(), isspace), t_path.end());
     std::cout << "t_path TRIMMED: " << t_path << std::endl;
-    m_sourceFile.seekg(0, m_sourceFile.end);
+    m_sourceFile.seekg(0, std::ifstream::end);
     auto fileSize = m_sourceFile.tellg();
-    m_sourceFile.seekg(0, m_sourceFile.beg);
+    m_sourceFile.seekg(0, std::ifstream::beg);
 
     std::ostream requestStream(&m_request);
     std::filesystem::path p(t_path);
@@ -102,8 +64,9 @@ void Client::openFile(std::string& t_path)
     std::cout << "GET " << p.string() << "\n" << fileSize << "\n\n";
 }
 
-void Client::openDeleteFile(std::string& t_path)
+void Client::openDeleteFile(Message& t_message)
 {
+    std::string t_path = t_message.getPath().string();
     std::cout << "t_path " << t_path << std::endl;
     t_path.erase(remove_if(t_path.begin(), t_path.end(), isspace), t_path.end());
     std::cout << "t_path TRIMMED: " << t_path << std::endl;

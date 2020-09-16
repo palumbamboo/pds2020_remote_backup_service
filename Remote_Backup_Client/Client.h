@@ -7,6 +7,7 @@
 #include <iostream>
 #include <boost/asio.hpp>
 #include <fstream>
+#include "Message.h"
 
 using boost::asio::ip::tcp;
 enum {MaxLength = 40000};
@@ -29,13 +30,13 @@ public:
 
     Client(boost::asio::io_service& ioService,
            tcp::resolver::results_type endpointIterator,
-           const std::string& action);
+           Message& message);
 
     ~Client();
 
     void call_connect();
-    void openFile(std::string& t_path);
-    void openDeleteFile(std::string& t_path);
+    void openFile(Message& t_message);
+    void openDeleteFile(Message& t_message);
     void doWriteFile(const boost::system::error_code& t_ec);
 
 };

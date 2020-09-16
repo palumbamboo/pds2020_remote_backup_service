@@ -4,20 +4,20 @@
 
 #include "UploadQueue.h"
 
-void UploadQueue::pushMessage(const std::string &path) {
+void UploadQueue::pushMessage(Message& message) {
     std::unique_lock<std::mutex> uniqueLock(mutex);
     fullQueue.wait(uniqueLock, [this](){ return queue.size()<size; });
-    std::cout << "PUSH QUEUE path= " << path << std::endl;
-    queue.push(path);
+    std::cout << "PUSH QUEUE path= " << message.getPathName() << std::endl;
+    queue.push(message);
     emptyQueue.notify_one();
 }
 
-std::string UploadQueue::popMessage() {
+Message UploadQueue::popMessage() {
     std::unique_lock<std::mutex> uniqueLock(mutex);
     emptyQueue.wait(uniqueLock, [this](){ return !queue.empty(); });
-    std::string popped = queue.front();
+    Message popped = queue.front();
     queue.pop();
-    std::cout << "POP QUEUE path= " << popped << std::endl;
+    std::cout << "POP QUEUE path= " << popped.getPathName() << std::endl;
     fullQueue.notify_one();
     return popped;
 }

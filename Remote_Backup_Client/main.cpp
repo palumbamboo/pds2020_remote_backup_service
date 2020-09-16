@@ -2,13 +2,16 @@
 #include "FileWatcher.h"
 #include "Client.h"
 #include "UploadQueue.h"
+#include "Message.h"
 
-void createClientSend(const std::string & action, const std::string& address, const std::string& port) {
+#define CLIENTID 1234567890
+
+void createClientSend(Message& message, const std::string& address, const std::string& port) {
     boost::asio::io_service ioService;
     tcp::resolver resolver(ioService);
     tcp::resolver::results_type endpointIterator = resolver.resolve(address, port);
 
-    Client client(ioService, endpointIterator, action);
+    Client client(ioService, endpointIterator, message);
 
     // ioService.run() continue till there are not asynchronous call opened.
     ioService.run();
@@ -23,28 +26,28 @@ void run_file_watcher(const std::string & path_to_watch, UploadQueue& queue) {
         // run a user provided lambda function
         fw.start([&](const std::string & path_to_watch, FileStatus status) -> void {
             // Process only regular files, all other file types are ignored
-            if (!std::filesystem::is_regular_file(std::filesystem::path(path_to_watch))
-            && status != FileStatus::erased) { // TODO - da sistemare sta cosa
+            std::filesystem::path filePath(path_to_watch);
+            if (!std::filesystem::is_regular_file(filePath) && status != FileStatus::erased) {
                 return;
             }
 
             switch (status) {
                 case FileStatus::created: {
                     std::cout << "File created: " << path_to_watch << std::endl;
-                    std::string command = "GET ";
-                    queue.pushMessage(command + path_to_watch);
+                    Message message(MessageCommand::CREATE, filePath, CLIENTID);
+                    queue.pushMessage(message);
                     break;
                 }
                 case FileStatus::modified: {
                     std::cout << "File modified: " << path_to_watch << std::endl;
-                    std::string command = "GET ";
-                    queue.pushMessage(command + path_to_watch);
+                    Message message(MessageCommand::CREATE, filePath, CLIENTID);
+                    queue.pushMessage(message);
                     break;
                 }
                 case FileStatus::erased: {
                     std::cout << "File erased: " << path_to_watch << std::endl;
-                    std::string command = "DEL ";
-                    queue.pushMessage(command + path_to_watch);
+                    Message message(MessageCommand::DELETE, filePath, CLIENTID);
+                    queue.pushMessage(message);
                     break;
                 }
                 default:
@@ -71,8 +74,8 @@ void scan_directory(std::string path_to_watch, UploadQueue& queue) {
         else if (itEntry->is_regular_file()) {
             std::cout << "file: " << filenameStr << '\n';
             std::cout << "files to send: itEntry " << itEntry->path() << std::endl;
-            std::string command = "GET ";
-            queue.pushMessage(command + std::string(itEntry->path()));
+            Message message(MessageCommand::CREATE, itEntry->path(), CLIENTID);
+            queue.pushMessage(message);
         }
         else
             std::cout << "??    " << filenameStr << '\n';
@@ -109,8 +112,8 @@ int main(int argc, char* argv[]) {
 
         std::thread tcq([&uploadQueue, &shutdown, &address, &port](){
             while(!shutdown) {
-                std::string action = uploadQueue.popMessage();
-                createClientSend(action, address, port);
+                Message message = uploadQueue.popMessage();
+                createClientSend(message, address, port);
             }
         });
 

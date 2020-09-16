@@ -9,10 +9,11 @@
 #include <mutex>
 #include <condition_variable>
 #include <iostream>
+#include "Message.h"
 
 class UploadQueue {
 private:
-    std::queue<std::string> queue;
+    std::queue<Message> queue;
     std::mutex mutex;
     std::condition_variable emptyQueue;
     std::condition_variable fullQueue;
@@ -20,8 +21,8 @@ private:
 public:
     explicit UploadQueue(int _size) : size(_size), mutex() {}
     ~UploadQueue()=default;
-    void pushMessage(const std::string & path);
-    std::string popMessage();
+    void pushMessage(Message& message);
+    Message popMessage();
 };
 
 
