@@ -74,6 +74,12 @@ $RECYCLE.BIN/
 # CMake
 cmake-build-*/
 
+# exclude everything
+files_to_send/*
+
+# exception to the rule
+!files_to_send/.gitkeep 
+
 # User-specific stuff
 .idea/**/workspace.xml
 .idea/**/tasks.xml

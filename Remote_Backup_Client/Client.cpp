@@ -2,6 +2,7 @@
 // Created by Daniele Leto on 17/08/2020.
 //
 
+#include <filesystem>
 #include "Client.h"
 
 std::mutex mutex;
