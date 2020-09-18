@@ -10,51 +10,6 @@ void Session::start() {
     doRead();
 }
 
-/*
-void Session::call_read() {
-
-    auto self(shared_from_this());
-    socket.async_read_some(boost::asio::buffer(buffer,MaxLength),
-                           [this, self] (boost::system::error_code ec, std::size_t length)
-                           {
-                                if(!ec) {
-                                    std::cout << "HERE SOPRA" << std::endl;
-                                    std::cout.write(buffer.data(), MaxLength);
-                                    call_write(length);
-                                } else {
-                                    std::cout << "ECCOMI SOPRA" << std::endl;
-                                    std::cout << ec << std::endl;
-                                }
-                           }
-    );
-
-    boost::asio::async_read(socket, m_requestBuf_,
-                                  [this, self] (boost::system::error_code ec, std::size_t length)
-                                  {
-                                      if(!ec) {
-                                          std::cout << "HERE" << std::endl;
-                                          //call_write(length);
-                                      } else {
-                                          std::cout << "ECCOMI"<<std::endl;
-                                          std::cout << ec << std::endl;
-                                      }
-
-                                  });
-}
-
-void Session::call_write(std::size_t length) {
-    auto self(shared_from_this());
-    boost::asio::async_write(socket,boost::asio::buffer(buffer, length),
-                        [this, self](boost::system::error_code ec, std::size_t //length)
-                        {
-                            if(!ec) {
-                                call_read();
-                            }
-                        }
-    );
-}
-*/
-
 void Session::doRead()
 {
     auto self = shared_from_this();
