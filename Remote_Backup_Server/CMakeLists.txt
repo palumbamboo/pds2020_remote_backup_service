@@ -12,4 +12,4 @@ if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif()
 
-add_executable(Remote_Backup_Server main.cpp Server.cpp Server.h Session.cpp Session.h Message.cpp Message.h)
+add_executable(Remote_Backup_Server main.cpp Server.cpp Server.h Session.cpp Session.h Message.cpp Message.h FileToUpload.cpp FileToUpload.h)

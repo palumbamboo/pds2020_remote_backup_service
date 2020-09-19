@@ -10,13 +10,21 @@
 #include <utility>
 #include "FileToUpload.h"
 
-enum class MessageCommand {CREATE, DELETE, CHECKSUM_REQUEST, CHECKSUM_RESPONSE};
+enum class MessageCommand {
+    CREATE = 0,
+    DELETE = 1,
+    INFO_REQUEST = 2,
+    INFO_RESPONSE = 3,
+    LOGIN_REQUEST = 4,
+    LOGIN_RESPONSE = 5,
+};
 
 class Message {
     FileToUpload fileToUpload;
     MessageCommand command;
     unsigned long clientId;
 public:
+    Message()=default;
     explicit Message(MessageCommand _command,
                      FileToUpload _fileToUpload,
                      unsigned long _clientId) :
@@ -24,7 +32,24 @@ public:
     ~Message()=default;
     MessageCommand getCommand() { return command; }
     unsigned long getClientId() { return clientId; }
-    FileToUpload getFile() { return fileToUpload; }
+    FileToUpload& getFile() { return fileToUpload; }
+
+    void setFileToUpload(const FileToUpload &_fileToUpload) {
+        fileToUpload = _fileToUpload;
+    }
+
+    void setCommand(MessageCommand _command) {
+        command = _command;
+    }
+
+    void setCommand(int _command) {
+        command = static_cast<MessageCommand>(_command);
+    }
+
+    void setClientId(unsigned long _clientId) {
+        clientId = _clientId;
+    }
+
 };
 
 #endif //REMOTE_BACKUP_CLIENT_MESSAGE_H

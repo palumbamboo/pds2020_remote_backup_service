@@ -8,6 +8,8 @@
 #include <boost/asio.hpp>
 #include <filesystem>
 #include <fstream>
+#include "Message.h"
+#include "FileToUpload.h"
 
 using boost::asio::ip::tcp;
 
@@ -21,9 +23,9 @@ private:
     std::ofstream m_outputFile;
     size_t m_fileSize;
     std::string m_task;
-
-    void call_read();
-    void call_write(std::size_t length);
+    unsigned long m_clientId;
+    Message m_message;
+    FileToUpload m_fileToUpload;
 
 public:
     explicit Session(tcp::socket socket);
