@@ -70,19 +70,17 @@ void Session::processRead(size_t t_bytesTransferred)
     std::istream requestStream(&m_requestBuf_);
     readData(requestStream);
 
-    if (m_task == "DEL") {
+    MessageCommand command = m_message.getCommand();
+
+    if(command == MessageCommand::DELETE) {
         if (!std::filesystem::remove(m_fileName)) {
             std::cout << "Error during removing.. " << m_fileName << std::endl;
         } else
             std::cout << "Success! Removed.. " << m_fileName << std::endl;
         return;
-    } else if (m_task != "GET") {
-        std::cout << "Errore! No GET or DEL task!" << std::endl;
-        return;
     }
 
     std::cout << "m_fileName after: " << m_fileName << std::endl;
-
 
     if (createFile() == -1)
         return;
@@ -115,8 +113,18 @@ void Session::readData(std::istream &stream)
     stream >> m_fileSize;
     stream.read(m_buf.data(), 3);
 
+    std::cout << m_task << " " << m_fileName.string() << " " << m_fileSize << std::endl;
+
+    m_fileToUpload.setPath(m_fileName);
+    m_fileToUpload.setFileSize(m_fileSize);
+
+    m_message.setCommand(stoi(m_task));
+    m_message.setFileToUpload(m_fileToUpload);
+    m_message.setClientId(0);
+
     std::cout << m_task << " to do!" << std::endl;
     std::cout << m_fileName << " size is " << m_fileSize
                  << ", tellg = " << stream.tellg() << std::endl;
 
 }
+
