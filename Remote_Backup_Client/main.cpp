@@ -3,6 +3,7 @@
 #include "Client.h"
 #include "UploadQueue.h"
 #include "Message.h"
+#include "FileToUpload.h"
 
 #define CLIENTID 1234567890
 
@@ -66,22 +67,25 @@ void scan_directory(std::string path_to_watch, UploadQueue& queue) {
         itEntry != std::filesystem::recursive_directory_iterator();
         ++itEntry ) {
         const auto filenameStr = itEntry->path().filename().string();
-        std::cout << filenameStr << std::endl;
         std::cout << std::setw(itEntry.depth()*3) << "";
         if (itEntry->is_directory()) {
             std::cout << "dir:  " << filenameStr << '\n';
         }
         else if (itEntry->is_regular_file()) {
-            std::cout << "file: " << filenameStr << '\n';
-            std::cout << "files to send: itEntry " << itEntry->path() << std::endl;
-            Message message(MessageCommand::CREATE, itEntry->path(), CLIENTID);
+            FileToUpload fileToUpload(itEntry->path());
+            std::string hash = fileToUpload.fileHash();
+            std::cout << "FILE path: " << itEntry->path() << " HASH: " << hash <<'\n';
+
+            // todo - implementare invio al server del checksum
+//            if(checksum diverso) {
+            Message message(MessageCommand::CREATE, fileToUpload, CLIENTID);
             queue.pushMessage(message);
+//            }
         }
         else
             std::cout << "??    " << filenameStr << '\n';
     }
 }
-
 
 int main(int argc, char* argv[]) {
     /*
