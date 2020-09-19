@@ -1,4 +1,5 @@
 #include <iostream>
+#include <boost/program_options.hpp>
 #include "FileWatcher.h"
 #include "Client.h"
 #include "UploadQueue.h"
@@ -35,19 +36,22 @@ void run_file_watcher(const std::string & path_to_watch, UploadQueue& queue) {
             switch (status) {
                 case FileStatus::created: {
                     std::cout << "File created: " << path_to_watch << std::endl;
-                    Message message(MessageCommand::CREATE, filePath, CLIENTID);
+                    FileToUpload fileToUpload(filePath);
+                    Message message(MessageCommand::CREATE, fileToUpload, CLIENTID);
                     queue.pushMessage(message);
                     break;
                 }
                 case FileStatus::modified: {
                     std::cout << "File modified: " << path_to_watch << std::endl;
-                    Message message(MessageCommand::CREATE, filePath, CLIENTID);
+                    FileToUpload fileToUpload(filePath);
+                    Message message(MessageCommand::CREATE, fileToUpload, CLIENTID);
                     queue.pushMessage(message);
                     break;
                 }
                 case FileStatus::erased: {
                     std::cout << "File erased: " << path_to_watch << std::endl;
-                    Message message(MessageCommand::DELETE, filePath, CLIENTID);
+                    FileToUpload fileToUpload(filePath);
+                    Message message(MessageCommand::DELETE, fileToUpload, CLIENTID);
                     queue.pushMessage(message);
                     break;
                 }
@@ -97,6 +101,23 @@ int main(int argc, char* argv[]) {
     auto address = argv[1];
     auto port = argv[2];
     */
+
+    // Declare app supported options.
+    boost::program_options::options_description desc("Allowed options");
+    desc.add_options()
+            ("help,h", "produce help message")
+            ("")
+            ("configuration", boost::program_options::value<int>(), "set compression level");
+
+    boost::program_options::variables_map vm;
+    boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vm);
+    boost::program_options::notify(vm);
+
+    if (vm.count("help")) {
+        std::cout << desc << std::endl;
+        return 1;
+    }
+
 
     auto address = "localhost";
     //watch the port
