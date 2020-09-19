@@ -56,6 +56,7 @@ void Client::openFile(Message& t_message)
     t_message.getFile().setFileSize(fileSize);
 
     std::ostream requestStream(&m_request);
+    std::cout << t_message.getClientId() << std::endl;
     requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " " << t_message.getFile().getPath() << " " << t_message.getFile().getFileSize() << "\n\n";
 }
 
@@ -65,6 +66,7 @@ void Client::openDeleteFile(Message& t_message)
     std::cout << "t_path " << t_path << std::endl;
 
     std::ostream requestStream(&m_request);
+    std::cout << t_message.getClientId() << std::endl;
     requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " " << t_message.getFile().getPath() << " " << -1 << "\n\n";
 }
 

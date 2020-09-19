@@ -122,6 +122,8 @@ void Session::readData(std::istream &stream)
     stream >> m_task;
     stream >> m_clientId;
 
+    stream.read(m_buf.data(), 1);
+
     // TODO: esiste il clientId? se no, errore, una directory per ogni client id e una cartella per ogni utente
     // TODO: info_request: se file esiste faccio hash con lo stesso metodo dell'altro e mando 1 se esiste e 0 se non esiste
 
@@ -155,7 +157,7 @@ void Session::readData(std::istream &stream)
         m_message.setFileToUpload(m_fileToUpload);
         m_message.setClientId(m_clientId);
 
-        stream.read(m_buf.data(), 3);
+        stream.read(m_buf.data(), 2);
         return;
     }
 }

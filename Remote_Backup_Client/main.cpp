@@ -72,6 +72,7 @@ void run_file_watcher(const std::string & path_to_watch, UploadQueue& queue) {
                 case FileStatus::erased: {
                     std::cout << "File erased: " << path_to_watch << std::endl;
                     FileToUpload fileToUpload(filePath);
+                    std::cout << globalClientId;
                     Message message(MessageCommand::DELETE, fileToUpload, globalClientId);
                     queue.pushMessage(message);
                     break;
