@@ -56,12 +56,18 @@ void Client::openFile(Message& t_message)
     auto fileSize = m_sourceFile.tellg();
     m_sourceFile.seekg(0, std::ifstream::beg);
 
+    t_message.getFile().setFileSize(fileSize);
+    std::cout << "SETTED FILESIZE " << fileSize << " " << t_message.getFile().getFileSize() << std::endl;
+    /*
     std::ostream requestStream(&m_request);
     std::filesystem::path p(t_path);
     std::cout << p.string() << std::endl;
     std::cout << "p.filename().string() :" << p.filename().string() << std::endl;
     requestStream << "GET " << p.string() << "\n" << fileSize << "\n\n";
     std::cout << "GET " << p.string() << "\n" << fileSize << "\n\n";
+     */
+    std::ostream requestStream(&m_request);
+    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getFile().getPath() << " " << t_message.getFile().getFileSize() << "\n\n";
 }
 
 void Client::openDeleteFile(Message& t_message)
@@ -70,12 +76,16 @@ void Client::openDeleteFile(Message& t_message)
     std::cout << "t_path " << t_path << std::endl;
     t_path.erase(remove_if(t_path.begin(), t_path.end(), isspace), t_path.end());
     std::cout << "t_path TRIMMED: " << t_path << std::endl;
+    /*
     std::ostream requestStream(&m_request);
     std::filesystem::path p(t_path);
     std::cout << p.string() << std::endl;
     std::cout << "p.filename().string() :" << p.filename().string() << std::endl;
     requestStream << "DEL " << p.string() << "\n" << 0 << "\n\n";
     std::cout << "DEL " << p.string() << "\n" << 0 << "\n\n";
+    */
+    std::ostream requestStream(&m_request);
+    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getFile().getPath() << " " << t_message.getFile().getFileSize() << "\n\n";
 }
 
 void Client::doWriteFile(const boost::system::error_code& t_ec)

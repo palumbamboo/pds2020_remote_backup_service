@@ -34,8 +34,6 @@ public:
     unsigned long getClientId() { return clientId; }
     FileToUpload getFile() { return fileToUpload; }
 
-    int getCommandInt() { return static_cast<int>(command); }
-
     void setFileToUpload(const FileToUpload &_fileToUpload) {
         fileToUpload = _fileToUpload;
     }

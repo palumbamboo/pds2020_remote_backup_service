@@ -23,8 +23,16 @@ std::string FileToUpload::fileHash() {
 
         const auto charDigest = reinterpret_cast<const char *>(&digest);
         boost::algorithm::hex(charDigest, charDigest + sizeof(boost::uuids::detail::md5::digest_type),
-        std::back_inserter(result));
+                              std::back_inserter(result));
         hashResult = result;
     }
     return hashResult;
+}
+
+void FileToUpload::setPath(const std::filesystem::path &_path) {
+    path = _path;
+}
+
+void FileToUpload::setFileSize(size_t _fileSize) {
+    fileSize = _fileSize;
 }
