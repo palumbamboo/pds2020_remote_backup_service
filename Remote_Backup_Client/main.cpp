@@ -9,9 +9,10 @@
 #include "Message.h"
 #include "FileToUpload.h"
 
-#define CLIENTID 1234567890
 #define VERSION "0.1"
 #define CONFIG_PATH "remote_client.cfg"
+
+std::string globalClientId = "0";
 
 std::string randomString( size_t length ) {
     auto randomString = []() -> char
@@ -57,21 +58,21 @@ void run_file_watcher(const std::string & path_to_watch, UploadQueue& queue) {
                 case FileStatus::created: {
                     std::cout << "File created: " << path_to_watch << std::endl;
                     FileToUpload fileToUpload(filePath);
-                    Message message(MessageCommand::CREATE, fileToUpload, CLIENTID);
+                    Message message(MessageCommand::CREATE, fileToUpload, globalClientId);
                     queue.pushMessage(message);
                     break;
                 }
                 case FileStatus::modified: {
                     std::cout << "File modified: " << path_to_watch << std::endl;
                     FileToUpload fileToUpload(filePath);
-                    Message message(MessageCommand::CREATE, fileToUpload, CLIENTID);
+                    Message message(MessageCommand::CREATE, fileToUpload, globalClientId);
                     queue.pushMessage(message);
                     break;
                 }
                 case FileStatus::erased: {
                     std::cout << "File erased: " << path_to_watch << std::endl;
                     FileToUpload fileToUpload(filePath);
-                    Message message(MessageCommand::DELETE, fileToUpload, CLIENTID);
+                    Message message(MessageCommand::DELETE, fileToUpload, globalClientId);
                     queue.pushMessage(message);
                     break;
                 }
@@ -86,7 +87,7 @@ void run_file_watcher(const std::string & path_to_watch, UploadQueue& queue) {
     }
 }
 
-void scan_directory(std::string path_to_watch, UploadQueue& queue) {
+void scan_directory(const std::string& path_to_watch, UploadQueue& queue) {
     for(auto itEntry = std::filesystem::recursive_directory_iterator(path_to_watch);
         itEntry != std::filesystem::recursive_directory_iterator();
         ++itEntry ) {
@@ -102,7 +103,7 @@ void scan_directory(std::string path_to_watch, UploadQueue& queue) {
 
             // todo - implementare invio al server del checksum
 //            if(checksum diverso) {
-            Message message(MessageCommand::CREATE, fileToUpload, CLIENTID);
+            Message message(MessageCommand::CREATE, fileToUpload, globalClientId);
             queue.pushMessage(message);
 //            }
         }
@@ -193,7 +194,7 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         if (!vm.count("input-dir")) {
-            std::cout << "Please add tha path to the folder to backup, use -h for help" << std::endl;
+            std::cout << "Please add that path to the folder to backup, use -h for help" << std::endl;
             return 1;
         }
         if (!vm.count("client-id")) {
@@ -216,6 +217,8 @@ int main(int argc, char* argv[]) {
                 configFile << insert;
             }
         }
+
+        globalClientId = clientId;
 
         configFile.close();
     } catch (std::exception &e) {

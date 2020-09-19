@@ -22,17 +22,17 @@ enum class MessageCommand {
 class Message {
     FileToUpload fileToUpload;
     MessageCommand command;
-    unsigned long clientId;
+    std::string clientId;
 public:
     Message()=default;
     explicit Message(MessageCommand _command,
-                     FileToUpload _fileToUpload,
-                     unsigned long _clientId) :
-            command(_command), fileToUpload(std::move(_fileToUpload)), clientId(_clientId) {}
+                     FileToUpload& _fileToUpload,
+                     std::string _clientId) :
+            command(_command), fileToUpload(_fileToUpload), clientId(std::move(_clientId)) {}
     ~Message()=default;
     MessageCommand getCommand() { return command; }
-    unsigned long getClientId() { return clientId; }
-    FileToUpload getFile() { return fileToUpload; }
+    std::string getClientId() { return clientId; }
+    FileToUpload& getFile() { return fileToUpload; }
 
     void setFileToUpload(const FileToUpload &_fileToUpload) {
         fileToUpload = _fileToUpload;
@@ -43,13 +43,12 @@ public:
     }
 
     void setCommand(int _command) {
-         command = static_cast<MessageCommand>(_command);
+        command = static_cast<MessageCommand>(_command);
     }
 
-    void setClientId(unsigned long _clientId) {
+    void setClientId(const std::string& _clientId) {
         clientId = _clientId;
     }
-
 };
 
 #endif //REMOTE_BACKUP_CLIENT_MESSAGE_H

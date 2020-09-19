@@ -5,7 +5,7 @@ int main() {
     try{
 
         //watch the port
-        short port = 2000;
+        short port = 5200;
 
         boost::asio::io_service ioService;
         Server server(ioService, port);
