@@ -8,24 +8,23 @@
 #include <string>
 #include <filesystem>
 #include <utility>
+#include "FileToUpload.h"
 
 enum class MessageCommand {CREATE, DELETE, CHECKSUM_REQUEST, CHECKSUM_RESPONSE};
 
 class Message {
-    std::filesystem::path path;
+    FileToUpload fileToUpload;
     MessageCommand command;
     unsigned long clientId;
 public:
     explicit Message(MessageCommand _command,
-                     std::filesystem::path _path,
+                     FileToUpload _fileToUpload,
                      unsigned long _clientId) :
-            command(_command), path(std::move(_path)), clientId(_clientId) {}
+            command(_command), fileToUpload(std::move(_fileToUpload)), clientId(_clientId) {}
     ~Message()=default;
     MessageCommand getCommand() { return command; }
-    std::filesystem::path getPath() { return path; }
     unsigned long getClientId() { return clientId; }
-    std::string getPathName() { return path.filename().string(); }
+    FileToUpload getFile() { return fileToUpload; }
 };
-
 
 #endif //REMOTE_BACKUP_CLIENT_MESSAGE_H

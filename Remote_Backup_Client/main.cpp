@@ -3,11 +3,9 @@
 #include "Client.h"
 #include "UploadQueue.h"
 #include "Message.h"
-#include <boost/uuid/detail/md5.hpp>
+#include "FileToUpload.h"
 
 #define CLIENTID 1234567890
-
-std::string computeFileHash(const std::filesystem::recursive_directory_iterator &itEntry);
 
 void createClientSend(Message& message, const std::string& address, const std::string& port) {
     boost::asio::io_service ioService;
@@ -69,41 +67,25 @@ void scan_directory(std::string path_to_watch, UploadQueue& queue) {
         itEntry != std::filesystem::recursive_directory_iterator();
         ++itEntry ) {
         const auto filenameStr = itEntry->path().filename().string();
-        std::cout << filenameStr << std::endl;
         std::cout << std::setw(itEntry.depth()*3) << "";
         if (itEntry->is_directory()) {
             std::cout << "dir:  " << filenameStr << '\n';
         }
         else if (itEntry->is_regular_file()) {
-            std::cout << "file: " << filenameStr << '\n';
-            std::cout << "files to send: itEntry " << itEntry->path() << std::endl;
-            std::string hash = computeFileHash(itEntry);
+            FileToUpload fileToUpload(itEntry->path());
+            std::string hash = fileToUpload.fileHash();
+            std::cout << "FILE path: " << itEntry->path() << " HASH: " << hash <<'\n';
 
             // todo - implementare invio al server del checksum
-            if(checksum diverso) {
-                Message message(MessageCommand::CREATE, itEntry->path(), CLIENTID);
-                queue.pushMessage(message);
-            }
+//            if(checksum diverso) {
+            Message message(MessageCommand::CREATE, fileToUpload, CLIENTID);
+            queue.pushMessage(message);
+//            }
         }
         else
             std::cout << "??    " << filenameStr << '\n';
     }
 }
-
-std::string computeFileHash(const std::filesystem::recursive_directory_iterator &itEntry) {
-    std::ifstream file;
-    file.open(itEntry->path(), std::ios_base::binary | std::ios_base::ate);
-    if (file.fail())
-        throw std::fstream::failure("Failed while opening file " + itEntry->path().string() + "\n");
-
-    std::string s;
-    while(std::getline(file, s)) {
-        boost::uuids::detail::md5 hash;
-        hash.process_bytes(s.data(), s.size());
-    }
-    return s;
-}
-
 
 int main(int argc, char* argv[]) {
     /*

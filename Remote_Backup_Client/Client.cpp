@@ -43,7 +43,7 @@ void Client::call_connect() {
 
 void Client::openFile(Message& t_message)
 {
-    std::string t_path = t_message.getPath().string();
+    std::string t_path = t_message.getFile().getPath().string();
     std::cout << "t_path " << t_path << std::endl;
 
     m_sourceFile.open(t_path, std::ios_base::binary | std::ios_base::ate);
@@ -66,7 +66,7 @@ void Client::openFile(Message& t_message)
 
 void Client::openDeleteFile(Message& t_message)
 {
-    std::string t_path = t_message.getPath().string();
+    std::string t_path = t_message.getFile().getPath().string();
     std::cout << "t_path " << t_path << std::endl;
     t_path.erase(remove_if(t_path.begin(), t_path.end(), isspace), t_path.end());
     std::cout << "t_path TRIMMED: " << t_path << std::endl;
