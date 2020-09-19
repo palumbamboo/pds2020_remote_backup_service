@@ -23,6 +23,7 @@ private:
     std::ofstream m_outputFile;
     size_t m_fileSize;
     std::string m_task;
+    unsigned long m_clientId;
     Message m_message;
     FileToUpload m_fileToUpload;
 

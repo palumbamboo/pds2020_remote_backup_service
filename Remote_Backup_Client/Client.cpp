@@ -67,7 +67,7 @@ void Client::openFile(Message& t_message)
     std::cout << "GET " << p.string() << "\n" << fileSize << "\n\n";
      */
     std::ostream requestStream(&m_request);
-    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getFile().getPath() << " " << t_message.getFile().getFileSize() << "\n\n";
+    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " " << t_message.getFile().getPath() << " " << t_message.getFile().getFileSize() << "\n\n";
 }
 
 void Client::openDeleteFile(Message& t_message)
@@ -85,7 +85,7 @@ void Client::openDeleteFile(Message& t_message)
     std::cout << "DEL " << p.string() << "\n" << 0 << "\n\n";
     */
     std::ostream requestStream(&m_request);
-    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getFile().getPath() << " " << t_message.getFile().getFileSize() << "\n\n";
+    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " " << t_message.getFile().getPath() << " " << t_message.getFile().getFileSize() << "\n\n";
 }
 
 void Client::doWriteFile(const boost::system::error_code& t_ec)

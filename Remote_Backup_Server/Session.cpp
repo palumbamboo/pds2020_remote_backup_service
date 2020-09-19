@@ -109,22 +109,18 @@ void Session::processRead(size_t t_bytesTransferred)
 void Session::readData(std::istream &stream)
 {
     stream >> m_task;
+    stream >> m_clientId;
     stream >> m_fileName;
     stream >> m_fileSize;
-    stream.read(m_buf.data(), 3);
+    stream.read(m_buf.data(), 4);
 
-    std::cout << m_task << " " << m_fileName.string() << " " << m_fileSize << std::endl;
+    std::cout << m_task << " " << m_clientId << " " << m_fileName.string() << " " << m_fileSize << std::endl;
 
     m_fileToUpload.setPath(m_fileName);
     m_fileToUpload.setFileSize(m_fileSize);
 
     m_message.setCommand(stoi(m_task));
     m_message.setFileToUpload(m_fileToUpload);
-    m_message.setClientId(0);
-
-    std::cout << m_task << " to do!" << std::endl;
-    std::cout << m_fileName << " size is " << m_fileSize
-                 << ", tellg = " << stream.tellg() << std::endl;
-
+    m_message.setClientId(m_clientId);
 }
 
