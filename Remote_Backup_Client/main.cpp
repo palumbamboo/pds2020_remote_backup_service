@@ -1,5 +1,8 @@
 #include <iostream>
 #include <boost/program_options.hpp>
+#include <random>
+#include <functional>
+#include <algorithm>
 #include "FileWatcher.h"
 #include "Client.h"
 #include "UploadQueue.h"
@@ -7,6 +10,23 @@
 #include "FileToUpload.h"
 
 #define CLIENTID 1234567890
+#define VERSION "0.1"
+#define CONFIG_PATH "remote_client.cfg"
+
+std::string randomString( size_t length ) {
+    auto randomString = []() -> char
+    {
+        const char charset[] =
+                "0123456789"
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                "abcdefghijklmnopqrstuvwxyz";
+        const size_t max_index = (sizeof(charset) - 1);
+        return charset[ rand() % max_index ];
+    };
+    std::string str(length,0);
+    std::generate_n( str.begin(), length, randomString);
+    return str;
+}
 
 void createClientSend(Message& message, const std::string& address, const std::string& port) {
     boost::asio::io_service ioService;
@@ -92,36 +112,116 @@ void scan_directory(std::string path_to_watch, UploadQueue& queue) {
 }
 
 int main(int argc, char* argv[]) {
-    /*
-    if (argc != 3) {
-        std::cerr << "Usage: client <address> <port>\n";
+    std::ofstream configFile;
+    configFile.open(CONFIG_PATH, std::fstream::app );
+
+    // If file does not exist, Create new file
+    if (!configFile ) {
+        configFile.open(CONFIG_PATH,  std::fstream::app);
+        configFile <<"\n";
+    }
+    configFile.close();
+
+    std::string address;
+    std::string port;
+    std::string username;
+    std::string folder;
+    std::string clientId;
+
+    try {
+        boost::program_options::options_description generic("Generic options");
+        generic.add_options()
+                ("version,v", "print version string")
+                ("help,h", "produce help message");
+
+        boost::program_options::options_description config("Allowed options");
+        config.add_options()
+                ("username,u",
+                 boost::program_options::value<std::string>(&username),
+                 "set your username")
+                ("server-ip-address,i",
+                 boost::program_options::value<std::string>(&address)->default_value("localhost"),
+                 "set ip address of the remote backup server")
+                ("server-port,p",
+                 boost::program_options::value<std::string>(&port)->default_value("5200"),
+                 "set port of the remote server")
+                ("clear-config", "clear configuration previously saved");
+
+        boost::program_options::options_description hidden("Hidden options");
+        hidden.add_options()
+                ("input-dir,d",
+                 boost::program_options::value<std::string>(&folder),
+                 "set the folder to backup")
+                ("client-id",
+                 boost::program_options::value<std::string>(&clientId),
+                 "USE ONLY IF YOU KNOW WHAT ARE YOU DOING");
+
+        boost::program_options::options_description cmdline_options;
+        cmdline_options.add(generic).add(config).add(hidden);
+
+        boost::program_options::options_description config_file_options;
+        config_file_options.add(config).add(hidden);
+
+        boost::program_options::options_description visible;
+        visible.add(generic).add(config);
+
+        boost::program_options::positional_options_description positionalOptions;
+        positionalOptions.add("input-dir", -1);
+
+        boost::program_options::variables_map vm;
+
+        boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmdline_options).positional(positionalOptions).run(), vm);
+
+        std::fstream ifs("remote_client.cfg");
+        boost::program_options::store(parse_config_file(ifs, config_file_options), vm);
+
+        boost::program_options::notify(vm);
+
+        if (vm.count("help")) {
+            std::cout << "Usage: " << argv[0] << " [options] input-dir\n";
+            std::cout << visible << "\n";
+            return 0;
+        }
+        if (vm.count("version")) {
+            std::cout << "Remote Backup Service, version " << VERSION << std::endl;
+            std::cout << "Made by Daniele Leto and Daniele Palumbo" << std::endl;
+            std::cout << "Programmazione di sistema, 2019/2020 " << std::endl;
+            return 0;
+        }
+        if (!vm.count("username")) {
+            std::cout << "Please add your username with -u [username]" << std::endl;
+            return 1;
+        }
+        if (!vm.count("input-dir")) {
+            std::cout << "Please add tha path to the folder to backup, use -h for help" << std::endl;
+            return 1;
+        }
+        if (!vm.count("client-id")) {
+            std::cout << "Generating a random clientID...";
+            clientId = randomString(64);
+            std::cout << " -> your clientID is " << clientId << std::endl;
+        }
+
+        std::cout << "Welcome back user " << username << ", your clientID is " << clientId << std::endl;
+        configFile.open(CONFIG_PATH, std::ofstream::out | std::ofstream::trunc);
+        if (!vm.count("clear-config")) {
+            std::vector<std::string> keys{"username", "server-ip-address", "server-port", "input-dir", "client-id"};
+            for (const auto& key : keys) {
+                std::string insert;
+                if(key=="client-id" && !vm.count("client-id")) {
+                    insert.append(key).append("=").append(clientId).append("\n");
+                } else {
+                    insert.append(key).append("=").append(vm[key].as<std::string>()).append("\n");
+                }
+                configFile << insert;
+            }
+        }
+
+        configFile.close();
+    } catch (std::exception &e) {
+        std::cout << "Exception during configuration: " << e.what() << std::endl;
         return 1;
     }
-
-    auto address = argv[1];
-    auto port = argv[2];
-    */
-
-    // Declare app supported options.
-    boost::program_options::options_description desc("Allowed options");
-    desc.add_options()
-            ("help,h", "produce help message")
-            ("")
-            ("configuration", boost::program_options::value<int>(), "set compression level");
-
-    boost::program_options::variables_map vm;
-    boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vm);
-    boost::program_options::notify(vm);
-
-    if (vm.count("help")) {
-        std::cout << desc << std::endl;
-        return 1;
-    }
-
-
-    auto address = "localhost";
-    //watch the port
-    auto port = "2000";
 
     std::string path_to_watch = "../files_to_send";
     UploadQueue uploadQueue(100);
