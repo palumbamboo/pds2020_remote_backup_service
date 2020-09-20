@@ -120,8 +120,8 @@ void Session::processRead(size_t t_bytesTransferred)
 void Session::readData(std::istream &stream)
 {
     stream >> m_task;
+    stream.read(m_buf.data(), 1);
     stream >> m_clientId;
-
     stream.read(m_buf.data(), 1);
 
     // TODO: esiste il clientId? se no, errore, una directory per ogni client id e una cartella per ogni utente
@@ -130,6 +130,7 @@ void Session::readData(std::istream &stream)
     auto command = static_cast<MessageCommand>(stoi(m_task));
 
     std::cout << "m_Task " << m_task << " m_clientID " << m_clientId << std::endl;
+
     if (command == MessageCommand::LOGIN_REQUEST) {
         // controlla se esiste la cartella, se non esiste la crea
         std::cout << "LOGIN" << std::endl;
@@ -145,8 +146,9 @@ void Session::readData(std::istream &stream)
     }
 
     if (command == MessageCommand::DELETE || command == MessageCommand::CREATE) {
-        // CREATE or DELETE | | clientID | | path | | fileSize, if DELETE = -1
+        // CREATE or DELETE | | clientID | | path | | fileSize, if DELETE = 0
         stream >> m_fileName;
+        stream.read(m_buf.data(), 1);
         stream >> m_fileSize;
         std::cout << "m_fileName " << m_fileName << " m_fileSize " << m_fileSize << std::endl;
 

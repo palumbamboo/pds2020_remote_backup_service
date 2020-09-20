@@ -38,7 +38,7 @@ public:
     void openFile(Message& t_message);
     void openDeleteFile(Message& t_message);
     void doWriteFile(const boost::system::error_code& t_ec);
-
+    void sendInfoRequest(Message& t_message);
 };
 
 
