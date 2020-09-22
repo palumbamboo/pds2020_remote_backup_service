@@ -14,14 +14,16 @@
 
 class FileToUpload {
 private:
+    std::string folderToWatch;
     std::filesystem::path path;
     size_t fileSize;
 public:
     FileToUpload()=default;
-    FileToUpload(std::filesystem::path _path) : path(std::move(_path)) {}
-    FileToUpload(std::filesystem::path _path, size_t _filesize) : path(std::move(_path)), fileSize(_filesize) {}
+    FileToUpload(std::string _folderToWatch, std::filesystem::path _path) : folderToWatch(_folderToWatch), path(std::move(_path)) {}
+    FileToUpload(std::string _folderToWatch, std::filesystem::path _path, size_t _filesize) : folderToWatch(_folderToWatch), path(std::move(_path)), fileSize(_filesize) {}
     ~FileToUpload()=default;
     std::filesystem::path getPath() { return path; }
+    std::filesystem::path getPathToUpload();
     std::string getPathName() { return path.filename().string(); }
     std::string fileHash();
     size_t getFileSize() { return fileSize; }

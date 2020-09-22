@@ -36,3 +36,17 @@ void FileToUpload::setPath(const std::filesystem::path &_path) {
 void FileToUpload::setFileSize(size_t _fileSize) {
     fileSize = _fileSize;
 }
+
+std::filesystem::path FileToUpload::getPathToUpload() {
+    std::string pathToTrim = path;
+    std::cout << "getPathToUpload: " << path << ", " << folderToWatch << std::endl;
+    size_t pos = pathToTrim.find(folderToWatch);
+    if (pos != std::string::npos)
+    {
+        // If found then erase it from string
+        pathToTrim.erase(pos, folderToWatch.length());
+    }
+    std::cout << "PATHTOUPLOAD: " << pathToTrim <<
+    " " << std::filesystem::path(pathToTrim) << std::endl;
+    return std::filesystem::path(pathToTrim);
+}

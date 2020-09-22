@@ -12,7 +12,8 @@
 #define VERSION "0.1"
 #define CONFIG_PATH "remote_client.cfg"
 
-std::string globalClientId = "0";
+std::string globalClientId;
+std::string folderToWatch;
 
 std::string randomString( size_t length ) {
     auto randomString = []() -> char
@@ -57,21 +58,21 @@ void run_file_watcher(const std::string & path_to_watch, UploadQueue& queue) {
             switch (status) {
                 case FileStatus::created: {
                     std::cout << "File created: " << path_to_watch << std::endl;
-                    FileToUpload fileToUpload(filePath);
+                    FileToUpload fileToUpload(folderToWatch, filePath);
                     Message message(MessageCommand::CREATE, fileToUpload, globalClientId);
                     queue.pushMessage(message);
                     break;
                 }
                 case FileStatus::modified: {
                     std::cout << "File modified: " << path_to_watch << std::endl;
-                    FileToUpload fileToUpload(filePath);
+                    FileToUpload fileToUpload(folderToWatch, filePath);
                     Message message(MessageCommand::CREATE, fileToUpload, globalClientId);
                     queue.pushMessage(message);
                     break;
                 }
                 case FileStatus::erased: {
                     std::cout << "File erased: " << path_to_watch << std::endl;
-                    FileToUpload fileToUpload(filePath);
+                    FileToUpload fileToUpload(folderToWatch, filePath);
                     Message message(MessageCommand::DELETE, fileToUpload, globalClientId);
                     queue.pushMessage(message);
                     break;
@@ -97,12 +98,12 @@ void scan_directory(const std::string& path_to_watch, UploadQueue& queue) {
             std::cout << "dir:  " << filenameStr << '\n';
         }
         else if (itEntry->is_regular_file()) {
-            FileToUpload fileToUpload(itEntry->path());
+            FileToUpload fileToUpload(folderToWatch, itEntry->path());
             std::string hash = fileToUpload.fileHash();
-            std::cout << "FILE path: " << itEntry->path() << " HASH: " << hash <<'\n';
+            std::cout << "FILE path: " << itEntry->path().filename() << " HASH: " << hash <<'\n';
 
             // todo - implementare invio al server del checksum
-//            if(checksum diverso) {
+//          if(checksum diverso) {
             Message message(MessageCommand::CREATE, fileToUpload, globalClientId);
             queue.pushMessage(message);
 //            }
@@ -220,18 +221,26 @@ int main(int argc, char* argv[]) {
 
         globalClientId = clientId;
 
+        std::string character = std::string(folder);
+        character = folder.back();
+        std::cout << character << std::endl;
+        if (character != "/")
+            folder.append("/");
+        folderToWatch = folder;
+
         configFile.close();
     } catch (std::exception &e) {
         std::cout << "Exception during configuration: " << e.what() << std::endl;
         return 1;
     }
 
-    std::string path_to_watch = "../files_to_send";
+    std::string path_to_watch = folderToWatch;
     UploadQueue uploadQueue(100);
     bool shutdown = false;
 
     try {
-
+        Message loginMessage(MessageCommand::LOGIN_REQUEST, globalClientId);
+        uploadQueue.pushMessage(loginMessage);
         //TODO: control the path, if not exists -> raise exception
         std::thread tfw([&path_to_watch, &uploadQueue](){
             scan_directory(path_to_watch, uploadQueue);

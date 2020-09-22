@@ -26,6 +26,9 @@ class Message {
 public:
     Message()=default;
     explicit Message(MessageCommand _command,
+                     std::string _clientId) :
+            command(_command), clientId(std::move(_clientId)) {}
+    explicit Message(MessageCommand _command,
                      FileToUpload& _fileToUpload,
                      std::string _clientId) :
             command(_command), fileToUpload(_fileToUpload), clientId(std::move(_clientId)) {}

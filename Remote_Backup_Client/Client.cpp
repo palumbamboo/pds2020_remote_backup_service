@@ -15,7 +15,7 @@ Client::Client(boost::asio::io_service& ioService,
     } else if(message.getCommand() == MessageCommand::DELETE){
         openDeleteFile(message);
     } else if(message.getCommand() == MessageCommand::LOGIN_REQUEST) {
-
+        sendInfoRequest(message);
     } else if(message.getCommand() == MessageCommand::INFO_REQUEST) {
         sendInfoRequest(message);
     }
@@ -61,18 +61,19 @@ void Client::openFile(Message& t_message)
 
     std::ostream requestStream(&m_request);
     std::cout << t_message.getClientId() << std::endl;
-    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " " << t_message.getFile().getPath() << " " << t_message.getFile().getFileSize() << "\n\n";
+    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " " << t_message.getFile().getPathToUpload() << " " << t_message.getFile().getFileSize() << "\n\n";
 }
 
 void Client::openDeleteFile(Message& t_message)
+
 {
-    std::string t_path = t_message.getFile().getPath().string();
+    std::string t_path = t_message.getFile().getPathToUpload();
     std::cout << "t_path " << t_path << std::endl;
     t_message.getFile().setFileSize(0);
 
     std::ostream requestStream(&m_request);
     std::cout << t_message.getClientId() << std::endl;
-    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " " << t_message.getFile().getPath() << " " << t_message.getFile().getFileSize() << "\n\n";
+    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " " << t_message.getFile().getPathToUpload() << " " << t_message.getFile().getFileSize() << "\n\n";
 }
 
 void Client::sendInfoRequest(Message& t_message) {

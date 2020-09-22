@@ -28,16 +28,16 @@ void Session::doRead()
 
 int Session::createFile()
 {
-    std::filesystem::path root_name = m_fileName;
-    root_name.remove_filename();
-    std::cout << "m_fileName: " << m_fileName << std::endl;
-    std::cout << "root_name: " << root_name << std::endl;
-    m_fileName.filename();
-    std::cout << "m_fileName after: " << m_fileName << std::endl;
-    std::filesystem::create_directories(root_name);
-    m_outputFile.open(m_fileName, std::ios_base::binary);
+    std::filesystem::path total_filename;
+    total_filename.append(m_clientId + "/" + std::string(m_fileName));
+    std::cout << "total_fileName: " << total_filename << std::endl;
+    //std::cout << "m_fileName: " << total_filename.filename() << std::endl;
+    //std::cout << "root_name: " << total_filename.root_name() << std::endl;
+    std::filesystem::path root_name = total_filename;
+    std::filesystem::create_directories(root_name.remove_filename());
+    m_outputFile.open(total_filename, std::ios_base::binary);
     if (!m_outputFile) {
-        std::cout <<  "Failed to create: " << m_fileName << std::endl;
+        std::cout <<  "Failed to create: " << total_filename << std::endl;
         std::flush(std::cout);
         return -1;
     }
@@ -74,7 +74,15 @@ void Session::processRead(size_t t_bytesTransferred)
 
     if (command == MessageCommand::LOGIN_REQUEST) {
         // controlla se esiste la cartella, se non esiste la crea
-
+        std::cout << m_clientId << std::endl;
+        if (!std::filesystem::exists(m_clientId)) {
+            if (std::filesystem::create_directories(m_clientId))
+                std::cout << "directory: " << m_clientId << " correctly created!" << std::endl;
+        } else {
+            std::cout << "directory: " << m_clientId << " already exists!" << std::endl;
+            std::cout << "User correctly logged!" << std::endl;
+        }
+        return;
     }
 
     if (command == MessageCommand::INFO_REQUEST) {
@@ -83,10 +91,12 @@ void Session::processRead(size_t t_bytesTransferred)
     }
 
     if (command == MessageCommand::DELETE) {
-        if (!std::filesystem::remove(m_fileName)) {
-            std::cout << "Error during removing.. " << m_fileName << std::endl;
+        std::filesystem::path total_filename;
+        total_filename.append(m_clientId + "/" + std::string(m_fileName));
+        if (!std::filesystem::remove(total_filename)) {
+            std::cout << "Error during removing.. " << total_filename << std::endl;
         } else
-            std::cout << "Success! Removed.. " << m_fileName << std::endl;
+            std::cout << "Success! Removed.. " << total_filename << std::endl;
         return;
     }
 
@@ -134,8 +144,10 @@ void Session::readData(std::istream &stream)
     if (command == MessageCommand::LOGIN_REQUEST) {
         // controlla se esiste la cartella, se non esiste la crea
         std::cout << "LOGIN" << std::endl;
-        stream >> hashed_password;
         stream.read(m_buf.data(), 1);
+        m_message.setCommand(command);
+        m_message.setClientId(m_clientId);
+        return;
     }
 
     if (command == MessageCommand::INFO_REQUEST) {
@@ -152,7 +164,7 @@ void Session::readData(std::istream &stream)
         stream >> m_fileSize;
         std::cout << "m_fileName " << m_fileName << " m_fileSize " << m_fileSize << std::endl;
 
-        m_fileToUpload.setPath(m_fileName);
+        m_fileToUpload.setPath(m_clientId + "/" + std::string(m_fileName));
         m_fileToUpload.setFileSize(m_fileSize);
 
         m_message.setCommand(command);
