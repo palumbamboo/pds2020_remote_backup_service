@@ -26,7 +26,11 @@ private:
     std::string m_clientId;
     Message m_message;
     FileToUpload m_fileToUpload;
-    std::string hashed_password;
+    std::string m_fileHash;
+    bool m_response;
+
+    template<class Buffer>
+    void writeBuffer(Buffer& t_buffer);
 
 public:
     explicit Session(tcp::socket socket);
@@ -36,4 +40,16 @@ public:
     void readData(std::istream &stream);
     int createFile();
     void doReadFileContent(size_t t_bytesTransferred);
+    void doWriteResponse();
 };
+
+template<class Buffer>
+void Session::writeBuffer(Buffer& t_buffer)
+{
+    boost::asio::async_write(socket,
+                             t_buffer,
+                             [this](boost::system::error_code ec, size_t /*length*/)
+                             {
+                                 std::cout << "Inside Write Buffer..................." << std::endl;
+                             });
+}

@@ -14,6 +14,7 @@
 
 std::string globalClientId;
 std::string folderToWatch;
+bool clientResponse;
 
 std::string randomString( size_t length ) {
     auto randomString = []() -> char
@@ -39,6 +40,9 @@ void createClientSend(Message& message, const std::string& address, const std::s
 
     // ioService.run() continue till there are not asynchronous call opened.
     ioService.run();
+    if (message.getCommand() == MessageCommand::INFO_REQUEST) {
+        clientResponse = client.getResponse();
+    }
 }
 
 void run_file_watcher(const std::string & path_to_watch, UploadQueue& queue) {
@@ -88,7 +92,7 @@ void run_file_watcher(const std::string & path_to_watch, UploadQueue& queue) {
     }
 }
 
-void scan_directory(const std::string& path_to_watch, UploadQueue& queue) {
+void scan_directory(const std::string& path_to_watch, UploadQueue& queue, const std::string& address, const std::string& port) {
     for(auto itEntry = std::filesystem::recursive_directory_iterator(path_to_watch);
         itEntry != std::filesystem::recursive_directory_iterator();
         ++itEntry ) {
@@ -103,10 +107,12 @@ void scan_directory(const std::string& path_to_watch, UploadQueue& queue) {
             std::cout << "FILE path: " << itEntry->path().filename() << " HASH: " << hash <<'\n';
 
             // todo - implementare invio al server del checksum
-//          if(checksum diverso) {
-            Message message(MessageCommand::CREATE, fileToUpload, globalClientId);
-            queue.pushMessage(message);
-//            }
+            Message message(MessageCommand::INFO_REQUEST, fileToUpload, globalClientId);
+            createClientSend(message, address, port);
+            if(clientResponse == 0) {
+                message.setCommand(MessageCommand::CREATE);
+                queue.pushMessage(message);
+            }
         }
         else
             std::cout << "??    " << filenameStr << '\n';
@@ -221,9 +227,9 @@ int main(int argc, char* argv[]) {
 
         globalClientId = clientId;
 
+        // todo - chech if is better this or to directly correct the configuration file
         std::string character = std::string(folder);
         character = folder.back();
-        std::cout << character << std::endl;
         if (character != "/")
             folder.append("/");
         folderToWatch = folder;
@@ -241,9 +247,10 @@ int main(int argc, char* argv[]) {
     try {
         Message loginMessage(MessageCommand::LOGIN_REQUEST, globalClientId);
         uploadQueue.pushMessage(loginMessage);
+
         //TODO: control the path, if not exists -> raise exception
-        std::thread tfw([&path_to_watch, &uploadQueue](){
-            scan_directory(path_to_watch, uploadQueue);
+        std::thread tfw([&path_to_watch, &uploadQueue, &address, &port](){
+            scan_directory(path_to_watch, uploadQueue, address, port);
             run_file_watcher(path_to_watch, uploadQueue);
         });
 

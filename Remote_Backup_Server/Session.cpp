@@ -19,7 +19,6 @@ void Session::doRead()
                          if (!ec)
                              processRead(bytes);
                          else {
-                             std::cout << "HERE" << std::endl;
                              std::cout << ec << std::endl;
                              std::cout << ec.message() << std::endl;
                          }
@@ -31,8 +30,6 @@ int Session::createFile()
     std::filesystem::path total_filename;
     total_filename.append(m_clientId + "/" + std::string(m_fileName));
     std::cout << "total_fileName: " << total_filename << std::endl;
-    //std::cout << "m_fileName: " << total_filename.filename() << std::endl;
-    //std::cout << "root_name: " << total_filename.root_name() << std::endl;
     std::filesystem::path root_name = total_filename;
     std::filesystem::create_directories(root_name.remove_filename());
     m_outputFile.open(total_filename, std::ios_base::binary);
@@ -57,7 +54,6 @@ void Session::doReadFileContent(size_t t_bytesTransferred)
         }
     }
     auto self = shared_from_this();
-
     socket.async_read_some(boost::asio::buffer(m_buf.data(), m_buf.size()),
                              [this, self](boost::system::error_code ec, size_t bytes)
                              {
@@ -87,7 +83,25 @@ void Session::processRead(size_t t_bytesTransferred)
 
     if (command == MessageCommand::INFO_REQUEST) {
         // INFO_REQUEST | | clientID | | path | | filehashato
+        std::cout << "INSIDE COMMAND = INFO_REQUEST " << std::endl;
+        std::filesystem::path total_filename;
+        total_filename.append(m_clientId + "/" + std::string(m_fileName));
+        FileToUpload fileToUpload(total_filename);
+        try {
+            std::string hash = fileToUpload.fileHash();
+            std::cout << "FILE path: " << m_fileName << " HASH: " << hash <<'\n';
 
+            if(m_fileHash == hash)
+                m_response = true;
+            else
+                m_response = false;
+        } catch (std::exception &e) {
+            std::cout << e.what() << std::endl;
+            m_response = false;
+        }
+
+        doWriteResponse();
+        return;
     }
 
     if (command == MessageCommand::DELETE) {
@@ -154,7 +168,14 @@ void Session::readData(std::istream &stream)
         // INFO_REQUEST | | clientID | | path | | filehashato
         std::cout << "INFO" << std::endl;
         stream >> m_fileName;
-        // add file hashed da confrontare con quello che calcolo io
+        stream.read(m_buf.data(), 1);
+        stream >> m_fileHash;
+
+        std::cout << "m_fileName " << m_fileName << std::endl;
+        std::cout << "hash of file " << m_fileHash << std::endl;
+        m_message.setCommand(command);
+        m_message.setClientId(m_clientId);
+        return;
     }
 
     if (command == MessageCommand::DELETE || command == MessageCommand::CREATE) {
@@ -173,6 +194,16 @@ void Session::readData(std::istream &stream)
 
         stream.read(m_buf.data(), 2);
         return;
+    }
+}
+
+void Session::doWriteResponse() {
+    if(m_message.getCommand() == MessageCommand::INFO_REQUEST) {
+        std::ostream requestStream(&m_requestBuf_);
+        m_message.setCommand(MessageCommand::INFO_RESPONSE);
+
+        requestStream << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
+        writeBuffer(m_requestBuf_);
     }
 }
 

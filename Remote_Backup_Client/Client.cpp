@@ -15,8 +15,9 @@ Client::Client(boost::asio::io_service& ioService,
     } else if(message.getCommand() == MessageCommand::DELETE){
         openDeleteFile(message);
     } else if(message.getCommand() == MessageCommand::LOGIN_REQUEST) {
-        sendInfoRequest(message);
+        sendLoginRequest(message);
     } else if(message.getCommand() == MessageCommand::INFO_REQUEST) {
+        m_command = MessageCommand::INFO_REQUEST;
         sendInfoRequest(message);
     }
     call_connect();
@@ -65,7 +66,6 @@ void Client::openFile(Message& t_message)
 }
 
 void Client::openDeleteFile(Message& t_message)
-
 {
     std::string t_path = t_message.getFile().getPathToUpload();
     std::cout << "t_path " << t_path << std::endl;
@@ -76,18 +76,13 @@ void Client::openDeleteFile(Message& t_message)
     requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " " << t_message.getFile().getPathToUpload() << " " << t_message.getFile().getFileSize() << "\n\n";
 }
 
-void Client::sendInfoRequest(Message& t_message) {
-    std::ostream requestStream(&m_request);
-
-    // TODO: send correct infos
-    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " " << "\n\n";
-}
-
-
-
 void Client::doWriteFile(const boost::system::error_code& t_ec)
 {
     if (!t_ec) {
+        if (m_command == MessageCommand::INFO_REQUEST) {
+            doRead();
+            return;
+        }
         if (m_sourceFile) {
             m_sourceFile.read(m_buf.data(), m_buf.size());
             if (m_sourceFile.fail() && !m_sourceFile.eof()) {
@@ -107,4 +102,44 @@ void Client::doWriteFile(const boost::system::error_code& t_ec)
     } else {
         std::cout << "Error: " << t_ec.message();
     }
+}
+
+void Client::sendLoginRequest(Message& t_message) {
+    std::ostream requestStream(&m_request);
+
+    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << "\n\n";
+}
+
+void Client::sendInfoRequest(Message& t_message) {
+    std::ostream requestStream(&m_request);
+
+    // TODO: send correct infos
+    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " "
+        << t_message.getFile().getPathToUpload() << " " << t_message.getFile().getFileStoredHash() << "\n\n";
+}
+
+void Client::processRead(size_t t_bytesTransferred) {
+    std::istream requestStream(&m_request);
+    requestStream >> m_task;
+    requestStream.read(m_buf.data(), 1);
+    requestStream >> m_clientId;
+    requestStream.read(m_buf.data(), 1);
+    requestStream >> m_response;
+
+
+    std::cout << m_task << " " << m_clientId << " " << m_response << std::endl;
+}
+
+void Client::doRead()
+{
+    async_read_until(socket, m_request, "\n\n",
+                     [this](boost::system::error_code ec, size_t bytes)
+                     {
+                         if (!ec)
+                             processRead(bytes);
+                         else {
+                             std::cout << ec << std::endl;
+                             std::cout << ec.message() << std::endl;
+                         }
+                     });
 }

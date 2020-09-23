@@ -17,6 +17,7 @@ private:
     std::string folderToWatch;
     std::filesystem::path path;
     size_t fileSize;
+    std::string hash;
 public:
     FileToUpload()=default;
     FileToUpload(std::string _folderToWatch, std::filesystem::path _path) : folderToWatch(_folderToWatch), path(std::move(_path)) {}
@@ -27,6 +28,7 @@ public:
     std::string getPathName() { return path.filename().string(); }
     std::string fileHash();
     size_t getFileSize() { return fileSize; }
+    std::string getFileStoredHash() { return hash; }
     void setPath(const std::filesystem::path &path);
     void setFileSize(size_t fileSize);
 };

@@ -26,7 +26,8 @@ std::string FileToUpload::fileHash() {
                               std::back_inserter(result));
         hashResult = result;
     }
-    return hashResult;
+    hash = hashResult;
+    return hash;
 }
 
 void FileToUpload::setPath(const std::filesystem::path &_path) {

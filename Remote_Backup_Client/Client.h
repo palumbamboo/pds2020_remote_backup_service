@@ -18,10 +18,15 @@ private:
     tcp::resolver::results_type endpointIterator;
 
     std::array<char, MaxLength> m_buf;
-    boost::asio::streambuf request;
     boost::asio::streambuf m_request;
     std::ifstream m_sourceFile;
     std::string m_path;
+    MessageCommand m_command;
+
+    std::string m_task;
+    std::string m_clientId;
+    bool m_response;
+
 
     template<class Buffer>
     void writeBuffer(Buffer& t_buffer);
@@ -38,7 +43,14 @@ public:
     void openFile(Message& t_message);
     void openDeleteFile(Message& t_message);
     void doWriteFile(const boost::system::error_code& t_ec);
+    void sendLoginRequest(Message& t_message);
     void sendInfoRequest(Message& t_message);
+
+
+    void doRead();
+    void processRead(size_t t_bytesTransferred);
+
+    bool getResponse() { return m_response; }
 };
 
 
