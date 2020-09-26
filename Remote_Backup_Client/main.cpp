@@ -25,7 +25,7 @@ void initializeConfigFiles(std::fstream &configFile, std::fstream &clientIdFile)
 
 void signal_callback_handler(int signum) {
     if(signum == 2) {
-        std::cout << "\nSHUTDOWN in progress..." << std::endl;
+        std::cout << "\n4. SHUTDOWN in progress..." << std::endl;
         programShutdown = true;
         fw.stop();
         std::cout << "\tFilewatcher stopped" << std::endl;
