@@ -25,8 +25,12 @@ public:
     // Keep a record of files from the base directory and their last modification time
     FileWatcher(std::string path_to_watch, std::chrono::duration<int, std::milli> delay);
 
+    FileWatcher() {};
+
     // Monitor "path_to_watch" for changes and in case of a change execute the user supplied "action" function
     void start(const std::function<void (std::string, FileStatus)> &action);
+
+    void stop();
 
 private:
     std::unordered_map<std::string, std::filesystem::file_time_type> paths_;

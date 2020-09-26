@@ -45,3 +45,7 @@ void FileWatcher::start(const std::function<void (std::string, FileStatus)> &act
         }
     }
 }
+
+void FileWatcher::stop() {
+    running_ = false;
+}

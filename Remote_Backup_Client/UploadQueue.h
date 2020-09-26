@@ -19,10 +19,12 @@ private:
     std::condition_variable fullQueue;
     int size;
 public:
+    explicit UploadQueue() {}
     explicit UploadQueue(int _size) : size(_size), mutex() {}
     ~UploadQueue()=default;
     void pushMessage(Message& message);
     Message popMessage();
+    bool readyToClose();
 };
 
 

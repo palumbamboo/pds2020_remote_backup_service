@@ -20,3 +20,8 @@ Message UploadQueue::popMessage() {
     return popped;
 }
 
+bool UploadQueue::readyToClose() {
+    std::lock_guard<std::mutex> lockGuard(mutex);
+    return queue.empty();
+}
+

@@ -2,6 +2,7 @@
 #include <boost/program_options.hpp>
 #include <random>
 #include <functional>
+#include <csignal>
 #include "FileWatcher.h"
 #include "Client.h"
 #include "UploadQueue.h"
@@ -14,9 +15,29 @@
 
 std::string globalClientId;
 std::string folderToWatch;
+bool programShutdown = false;
+bool shutdownComplete = false;
 bool clientResponse;
+FileWatcher fw;
+UploadQueue uq;
 
 void initializeConfigFiles(std::fstream &configFile, std::fstream &clientIdFile);
+
+void signal_callback_handler(int signum) {
+    if(signum == 2) {
+        std::cout << "\nSHUTDOWN in progress..." << std::endl;
+        programShutdown = true;
+        fw.stop();
+        std::cout << "\tFilewatcher stopped" << std::endl;
+
+        // TODO - ADD TIMER
+        std::cout << "\tStarted timeout shutdown in 10 seconds" << std::endl;
+        while (!uq.readyToClose()) {
+        }
+        shutdownComplete = true;
+        exit(signum);
+    }
+}
 
 std::string randomString(size_t length ) {
     auto randomString = []() -> char
@@ -44,11 +65,13 @@ void createClientSend(Message& message, const std::string& address, const std::s
 void run_file_watcher(const std::string & path_to_watch, UploadQueue& queue) {
     try {
         // Create a FileWatcher instance that will check the current folder for changes every 1 second
-        FileWatcher fw{path_to_watch, std::chrono::milliseconds(1000)};
+        FileWatcher fileWatcher{path_to_watch, std::chrono::milliseconds(1000)};
+        fw = fileWatcher;
 
         // Start monitoring a folder for changes and (in case of changes)
         // run a user provided lambda function
-        fw.start([&](const std::string & path_to_watch, FileStatus status) -> void {
+        fileWatcher.start([&](const std::string & path_to_watch, FileStatus status) -> void {
+
             // Process only regular files, all other file types are ignored
             std::filesystem::path filePath(path_to_watch);
             if (!std::filesystem::is_regular_file(filePath) && status != FileStatus::erased) {
@@ -233,7 +256,8 @@ int main(int argc, char* argv[]) {
     }
 
     UploadQueue uploadQueue(100);
-    bool shutdown = false;
+
+    signal(SIGINT, signal_callback_handler);
 
     try {
         Message loginMessage(MessageCommand::LOGIN_REQUEST, globalClientId);
@@ -244,12 +268,12 @@ int main(int argc, char* argv[]) {
         std::cout << "-> Client and server file system aligned\n\n";
 
         //TODO: control the path, if not exists -> raise exception
-        std::thread tfw([&uploadQueue, &address, &port](){
+        std::thread tfw([&uploadQueue](){
             run_file_watcher(folderToWatch, uploadQueue);
         });
 
-        std::thread tcq([&uploadQueue, &shutdown, &address, &port](){
-            while(!shutdown) {
+        std::thread tcq([&uploadQueue, &address, &port](){
+            while(!shutdownComplete) {
                 Message message = uploadQueue.popMessage();
                 createClientSend(message, address, port);
             }
