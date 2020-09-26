@@ -12,7 +12,7 @@
 
 enum class MessageCommand {
     CREATE = 0,
-    DELETE = 1,
+    REMOVE = 1,
     INFO_REQUEST = 2,
     INFO_RESPONSE = 3,
     LOGIN_REQUEST = 4,
