@@ -2,21 +2,23 @@
 #include <boost/program_options.hpp>
 #include <random>
 #include <functional>
-#include <algorithm>
 #include "FileWatcher.h"
 #include "Client.h"
 #include "UploadQueue.h"
 #include "Message.h"
 #include "FileToUpload.h"
 
-#define VERSION "0.1"
-#define CONFIG_PATH "remote_client.cfg"
+#define VERSION       "0.1"
+#define CONFIG_PATH   "remote_client.cfg"
+#define CLIENTID_PATH "client_identifier.cfg"
 
 std::string globalClientId;
 std::string folderToWatch;
 bool clientResponse;
 
-std::string randomString( size_t length ) {
+void initializeConfigFiles(std::fstream &configFile, std::fstream &clientIdFile);
+
+std::string randomString(size_t length ) {
     auto randomString = []() -> char
     {
         const char charset[] =
@@ -32,14 +34,8 @@ std::string randomString( size_t length ) {
 }
 
 void createClientSend(Message& message, const std::string& address, const std::string& port) {
-    boost::asio::io_service ioService;
-    tcp::resolver resolver(ioService);
-    tcp::resolver::results_type endpointIterator = resolver.resolve(address, port);
-
-    Client client(ioService, endpointIterator, message);
-
-    // ioService.run() continue till there are not asynchronous call opened.
-    ioService.run();
+    Client client(address, port, message);
+    client.start();
     if (message.getCommand() == MessageCommand::INFO_REQUEST) {
         clientResponse = client.getResponse();
     }
@@ -77,7 +73,7 @@ void run_file_watcher(const std::string & path_to_watch, UploadQueue& queue) {
                 case FileStatus::erased: {
                     std::cout << "File erased: " << path_to_watch << std::endl;
                     FileToUpload fileToUpload(folderToWatch, filePath);
-                    Message message(MessageCommand::DELETE, fileToUpload, globalClientId);
+                    Message message(MessageCommand::REMOVE, fileToUpload, globalClientId);
                     queue.pushMessage(message);
                     break;
                 }
@@ -97,14 +93,10 @@ void scan_directory(const std::string& path_to_watch, UploadQueue& queue, const 
         itEntry != std::filesystem::recursive_directory_iterator();
         ++itEntry ) {
         const auto filenameStr = itEntry->path().filename().string();
-        std::cout << std::setw(itEntry.depth()*3) << "";
-        if (itEntry->is_directory()) {
-            std::cout << "dir:  " << filenameStr << '\n';
-        }
-        else if (itEntry->is_regular_file()) {
+        if (itEntry->is_regular_file()) {
             FileToUpload fileToUpload(folderToWatch, itEntry->path());
             std::string hash = fileToUpload.fileHash();
-            std::cout << "FILE path: " << itEntry->path().filename() << " HASH: " << hash <<'\n';
+            std::cout << "FILE path: " << filenameStr << " HASH: " << hash <<'\n';
 
             // todo - implementare invio al server del checksum
             Message message(MessageCommand::INFO_REQUEST, fileToUpload, globalClientId);
@@ -120,21 +112,19 @@ void scan_directory(const std::string& path_to_watch, UploadQueue& queue, const 
 }
 
 int main(int argc, char* argv[]) {
-    std::ofstream configFile;
-    configFile.open(CONFIG_PATH, std::fstream::app );
 
-    // If file does not exist, Create new file
-    if (!configFile ) {
-        configFile.open(CONFIG_PATH,  std::fstream::app);
-        configFile <<"\n";
-    }
-    configFile.close();
+    std::cout << "============= REMOTE BACKUP CLIENT =============" << "\n\n";
 
+    std::fstream configFile(CONFIG_PATH);
+    std::fstream clientIdFile(CLIENTID_PATH);
     std::string address;
     std::string port;
     std::string username;
     std::string folder;
     std::string clientId;
+
+    std::cout << "1. Service configuration phase..." << std::endl;
+    initializeConfigFiles(configFile, clientIdFile);
 
     try {
         boost::program_options::options_description generic("Generic options");
@@ -159,13 +149,16 @@ int main(int argc, char* argv[]) {
         hidden.add_options()
                 ("input-dir,d",
                  boost::program_options::value<std::string>(&folder),
-                 "set the folder to backup")
+                 "set the folder to backup");
+
+        boost::program_options::options_description clientIdOption("Hidden Client ID");
+        clientIdOption.add_options()
                 ("client-id",
                  boost::program_options::value<std::string>(&clientId),
                  "USE ONLY IF YOU KNOW WHAT ARE YOU DOING");
 
         boost::program_options::options_description cmdline_options;
-        cmdline_options.add(generic).add(config).add(hidden);
+        cmdline_options.add(generic).add(config).add(hidden).add(clientIdOption);
 
         boost::program_options::options_description config_file_options;
         config_file_options.add(config).add(hidden);
@@ -180,8 +173,10 @@ int main(int argc, char* argv[]) {
 
         boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmdline_options).positional(positionalOptions).run(), vm);
 
-        std::fstream ifs("remote_client.cfg");
+        std::fstream ifs(CONFIG_PATH);
+        std::fstream cfs(CLIENTID_PATH);
         boost::program_options::store(parse_config_file(ifs, config_file_options), vm);
+        boost::program_options::store(parse_config_file(cfs, clientIdOption), vm);
 
         boost::program_options::notify(vm);
 
@@ -210,20 +205,20 @@ int main(int argc, char* argv[]) {
             std::cout << " -> your clientID is " << clientId << std::endl;
         }
 
-        std::cout << "Welcome back user " << username << ", your clientID is " << clientId << std::endl;
+        std::cout << "-> Service configuration done! Welcome back user " << username << ", your clientID is " << clientId << "\n\n";
         configFile.open(CONFIG_PATH, std::ofstream::out | std::ofstream::trunc);
         if (!vm.count("clear-config")) {
-            std::vector<std::string> keys{"username", "server-ip-address", "server-port", "input-dir", "client-id"};
+            std::vector<std::string> keys{"username", "server-ip-address", "server-port", "input-dir"};
             for (const auto& key : keys) {
                 std::string insert;
-                if(key=="client-id" && !vm.count("client-id")) {
-                    insert.append(key).append("=").append(clientId).append("\n");
-                } else {
-                    insert.append(key).append("=").append(vm[key].as<std::string>()).append("\n");
-                }
+                insert.append(key).append("=").append(vm[key].as<std::string>()).append("\n");
                 configFile << insert;
             }
         }
+        clientIdFile.open(CLIENTID_PATH, std::ofstream::out | std::ofstream::trunc);
+        std::string insert;
+        insert.append("client-id").append("=").append(clientId).append("\n");
+        clientIdFile << insert;
 
         globalClientId = clientId;
 
@@ -235,6 +230,7 @@ int main(int argc, char* argv[]) {
         folderToWatch = folder;
 
         configFile.close();
+        clientIdFile.close();
     } catch (std::exception &e) {
         std::cout << "Exception during configuration: " << e.what() << std::endl;
         return 1;
@@ -269,7 +265,26 @@ int main(int argc, char* argv[]) {
         std::cerr << "Exceptions!" << std::endl;
     }
 
+    std::cout << "\n\n" << "============= BYE BYE =============" << "\n\n";
+
     return 0;
+}
+
+void initializeConfigFiles(std::fstream &configFile, std::fstream &clientIdFile) {
+    configFile.open(CONFIG_PATH, std::fstream::app);
+    clientIdFile.open(CLIENTID_PATH, std::fstream::app);
+
+    // If file does not exist, Create new file
+    if (!configFile ) {
+        configFile <<"\n";
+    }
+
+    if (!clientIdFile ) {
+        clientIdFile <<"\n";
+    }
+
+    configFile.close();
+    clientIdFile.close();
 }
 
 

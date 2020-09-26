@@ -5,22 +5,11 @@
 #include <filesystem>
 #include "Client.h"
 
-Client::Client(boost::asio::io_service& ioService,
-               tcp::resolver::results_type endpointIterator,
-               Message & message) :
+Client::Client(const std::string &address, const std::string &port, Message & _message) :
+        resolver{ioService},
         socket{ioService},
-        endpointIterator{std::move(endpointIterator)} {
-    if(message.getCommand() == MessageCommand::CREATE) {
-        openFile(message);
-    } else if(message.getCommand() == MessageCommand::DELETE){
-        openDeleteFile(message);
-    } else if(message.getCommand() == MessageCommand::LOGIN_REQUEST) {
-        sendLoginRequest(message);
-    } else if(message.getCommand() == MessageCommand::INFO_REQUEST) {
-        m_command = MessageCommand::INFO_REQUEST;
-        sendInfoRequest(message);
-    }
-    call_connect();
+        message{_message}{
+    endpointIterator = resolver.resolve(address, port);
 }
 
 Client::~Client() {
@@ -28,22 +17,41 @@ Client::~Client() {
     socket.close();
 }
 
-void Client::call_connect() {
-    std::cout << "call_connect" << std::endl;
+void Client::start() {
+    if(message.getCommand() == MessageCommand::CREATE) {
+        openFile(message);
+    } else if(message.getCommand() == MessageCommand::REMOVE){
+        openDeleteFile(message);
+    } else if(message.getCommand() == MessageCommand::LOGIN_REQUEST) {
+        sendLoginRequest(message);
+    } else if(message.getCommand() == MessageCommand::INFO_REQUEST) {
+        m_command = MessageCommand::INFO_REQUEST;
+        sendInfoRequest(message);
+    }
+    try_connect();
+    ioService.run();
+}
+
+void Client::try_connect() {
     boost::asio::async_connect(socket,
                                endpointIterator,
-                               [this] (boost::system::error_code ec, const tcp::endpoint& endpoint)
-                               {
-                                if(!ec) {
-                                    std::cout << "Connected" << std::endl;
-                                    writeBuffer(m_request);
-                                }
-                                else {
-                                    std::cout << ec << std::endl;
-                                    std::cout << "Coudn't connect to host. Please run server "
-                                                 "or check network connection." << std::endl;
-                                }
-    });
+                               [this](boost::system::error_code ec, const tcp::endpoint &endpoint){
+                                   if(!ec)
+                                   {
+                                       _status = CONNECTED;
+                                       std::cout << "Connected." << std::endl;
+                                       writeBuffer(m_request);
+                                   }
+                                   else
+                                   {
+                                       _status = NOT_CONNECTED;
+                                       std::cout << "CONNECTION ERROR -> code: " << ec << " error: " << ec.message()
+                                                 << std::endl;
+                                       socket.close();
+                                       m_timer.expires_from_now(boost::asio::chrono::seconds{2});
+                                       m_timer.async_wait(std::bind(&Client::on_ready_to_reconnect, this, std::placeholders::_1));
+                                   }
+                               });
 }
 
 void Client::openFile(Message& t_message)
@@ -115,7 +123,7 @@ void Client::sendInfoRequest(Message& t_message) {
 
     // TODO: send correct infos
     requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " "
-        << t_message.getFile().getPathToUpload() << " " << t_message.getFile().getFileStoredHash() << "\n\n";
+                  << t_message.getFile().getPathToUpload() << " " << t_message.getFile().getFileStoredHash() << "\n\n";
 }
 
 void Client::processRead(size_t t_bytesTransferred) {
@@ -130,11 +138,9 @@ void Client::processRead(size_t t_bytesTransferred) {
     std::cout << m_task << " " << m_clientId << " " << m_response << std::endl;
 }
 
-void Client::doRead()
-{
+void Client::doRead() {
     async_read_until(socket, m_request, "\n\n",
-                     [this](boost::system::error_code ec, size_t bytes)
-                     {
+                     [this](boost::system::error_code ec, size_t bytes) {
                          if (!ec)
                              processRead(bytes);
                          else {
@@ -142,4 +148,8 @@ void Client::doRead()
                              std::cout << ec.message() << std::endl;
                          }
                      });
+}
+
+void Client::on_ready_to_reconnect(const boost::system::error_code &error) {
+    try_connect();
 }

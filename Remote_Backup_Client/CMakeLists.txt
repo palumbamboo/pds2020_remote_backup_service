@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.17)
 project(Remote_Backup_Client)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DASIO_STANDALONE -pthread")
 
 find_package(Boost COMPONENTS system filesystem program_options REQUIRED)
 if(Boost_FOUND)

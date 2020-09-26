@@ -11,11 +11,18 @@
 
 using boost::asio::ip::tcp;
 enum {MaxLength = 40000};
+enum ConnectionStatus{
+    NOT_CONNECTED,
+    CONNECTED
+};
 
 class Client {
 private:
+    boost::asio::io_service ioService;
+    tcp::resolver resolver;
     tcp::socket socket;
     tcp::resolver::results_type endpointIterator;
+    ::boost::asio::steady_timer m_timer{ioService, boost::asio::chrono::seconds{2}};
 
     std::array<char, MaxLength> m_buf;
     boost::asio::streambuf m_request;
@@ -27,19 +34,19 @@ private:
     std::string m_clientId;
     bool m_response;
 
-
+    ConnectionStatus _status = NOT_CONNECTED;
+    Message message;
     template<class Buffer>
     void writeBuffer(Buffer& t_buffer);
 
 public:
 
-    Client(boost::asio::io_service& ioService,
-           tcp::resolver::results_type endpointIterator,
-           Message& message);
+    Client(const std::string &address, const std::string &port, Message & _message);
 
     ~Client();
-
-    void call_connect();
+    void start();
+    void try_connect();
+    void on_ready_to_reconnect(const boost::system::error_code &error);
     void openFile(Message& t_message);
     void openDeleteFile(Message& t_message);
     void doWriteFile(const boost::system::error_code& t_ec);
