@@ -13,14 +13,15 @@ Client::Client(const std::string &address, const std::string &port, Message & _m
 }
 
 Client::~Client() {
-    std::cout << "Distructor called" << std::endl;
     socket.close();
 }
 
 void Client::start() {
     if(message.getCommand() == MessageCommand::CREATE) {
         openFile(message);
+        std::cout << "\tSEND file to server: " << message.getFile().getPathName();
     } else if(message.getCommand() == MessageCommand::REMOVE){
+        std::cout << "\tREMOVE file from server: " << message.getFile().getPathName();
         openDeleteFile(message);
     } else if(message.getCommand() == MessageCommand::LOGIN_REQUEST) {
         sendLoginRequest(message);
@@ -39,13 +40,14 @@ void Client::try_connect() {
                                    if(!ec)
                                    {
                                        _status = CONNECTED;
-                                       std::cout << "Connected." << std::endl;
                                        writeBuffer(m_request);
+                                       if(this->message.getCommand() == MessageCommand::CREATE || this->message.getCommand() == MessageCommand::REMOVE)
+                                           std::cout << " -> DONE" << std::endl;
                                    }
                                    else
                                    {
                                        _status = NOT_CONNECTED;
-                                       std::cout << "CONNECTION ERROR -> code: " << ec << " error: " << ec.message()
+                                       std::cout << "\tCONNECTION ERROR -> code: " << ec << " error: " << ec.message()
                                                  << std::endl;
                                        socket.close();
                                        m_timer.expires_from_now(boost::asio::chrono::seconds{2});
@@ -57,7 +59,6 @@ void Client::try_connect() {
 void Client::openFile(Message& t_message)
 {
     std::string t_path = t_message.getFile().getPath().string();
-    std::cout << "t_path " << t_path << std::endl;
 
     m_sourceFile.open(t_path, std::ios_base::binary | std::ios_base::ate);
     if (m_sourceFile.fail())
@@ -69,18 +70,15 @@ void Client::openFile(Message& t_message)
     t_message.getFile().setFileSize(fileSize);
 
     std::ostream requestStream(&m_request);
-    std::cout << t_message.getClientId() << std::endl;
     requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " " << t_message.getFile().getPathToUpload() << " " << t_message.getFile().getFileSize() << "\n\n";
 }
 
 void Client::openDeleteFile(Message& t_message)
 {
     std::string t_path = t_message.getFile().getPathToUpload();
-    std::cout << "t_path " << t_path << std::endl;
     t_message.getFile().setFileSize(0);
 
     std::ostream requestStream(&m_request);
-    std::cout << t_message.getClientId() << std::endl;
     requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " " << t_message.getFile().getPathToUpload() << " " << t_message.getFile().getFileSize() << "\n\n";
 }
 
@@ -98,12 +96,6 @@ void Client::doWriteFile(const boost::system::error_code& t_ec)
                 std::cout << msg;
                 throw std::fstream::failure(msg);
             }
-            std::stringstream ss;
-            ss << "Send " << m_sourceFile.gcount() << " bytes, total: "
-               << m_sourceFile.tellg() << " bytes";
-            std::cout << ss.str();
-            std::cout << ss.str() << std::endl;
-
             auto buf = boost::asio::buffer(m_buf.data(), static_cast<size_t>(m_sourceFile.gcount()));
             writeBuffer(buf);
         }
@@ -134,8 +126,7 @@ void Client::processRead(size_t t_bytesTransferred) {
     requestStream.read(m_buf.data(), 1);
     requestStream >> m_response;
 
-
-    std::cout << m_task << " " << m_clientId << " " << m_response << std::endl;
+    //std::cout << "Client::processRead -> " << m_task << " " << m_clientId << " " << m_response << std::endl;
 }
 
 void Client::doRead() {

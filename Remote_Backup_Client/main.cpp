@@ -57,28 +57,25 @@ void run_file_watcher(const std::string & path_to_watch, UploadQueue& queue) {
 
             switch (status) {
                 case FileStatus::created: {
-                    std::cout << "File created: " << path_to_watch << std::endl;
                     FileToUpload fileToUpload(folderToWatch, filePath);
                     Message message(MessageCommand::CREATE, fileToUpload, globalClientId);
                     queue.pushMessage(message);
                     break;
                 }
                 case FileStatus::modified: {
-                    std::cout << "File modified: " << path_to_watch << std::endl;
                     FileToUpload fileToUpload(folderToWatch, filePath);
                     Message message(MessageCommand::CREATE, fileToUpload, globalClientId);
                     queue.pushMessage(message);
                     break;
                 }
                 case FileStatus::erased: {
-                    std::cout << "File erased: " << path_to_watch << std::endl;
                     FileToUpload fileToUpload(folderToWatch, filePath);
                     Message message(MessageCommand::REMOVE, fileToUpload, globalClientId);
                     queue.pushMessage(message);
                     break;
                 }
                 default:
-                    std::cout << "Error! Unknown file status." << std::endl;
+                    std::cout << "\nERROR! Unknown file status.\n" << std::endl;
             }
         });
     }
@@ -96,14 +93,15 @@ void scan_directory(const std::string& path_to_watch, UploadQueue& queue, const 
         if (itEntry->is_regular_file()) {
             FileToUpload fileToUpload(folderToWatch, itEntry->path());
             std::string hash = fileToUpload.fileHash();
-            std::cout << "FILE path: " << filenameStr << " HASH: " << hash <<'\n';
 
-            // todo - implementare invio al server del checksum
             Message message(MessageCommand::INFO_REQUEST, fileToUpload, globalClientId);
             createClientSend(message, address, port);
             if(clientResponse == 0) {
                 message.setCommand(MessageCommand::CREATE);
+                std::cout << "\tFILE: " << filenameStr << " not present on server -> enqueue to send to server" << std::endl;
                 queue.pushMessage(message);
+            } else {
+                std::cout << "\tFILE: " << filenameStr << " already present on server -> skipping" << std::endl;
             }
         }
         else
@@ -198,6 +196,10 @@ int main(int argc, char* argv[]) {
         if (!vm.count("input-dir")) {
             std::cout << "Please add that path to the folder to backup, use -h for help" << std::endl;
             return 1;
+        } else {
+            char lastChar = folder.back();
+            if (lastChar != '/')
+                folder.append("/");
         }
         if (!vm.count("client-id")) {
             std::cout << "Generating a random clientID...";
@@ -221,12 +223,6 @@ int main(int argc, char* argv[]) {
         clientIdFile << insert;
 
         globalClientId = clientId;
-
-        // todo - chech if is better this or to directly correct the configuration file
-        std::string character = std::string(folder);
-        character = folder.back();
-        if (character != "/")
-            folder.append("/");
         folderToWatch = folder;
 
         configFile.close();
@@ -236,7 +232,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::string path_to_watch = folderToWatch;
     UploadQueue uploadQueue(100);
     bool shutdown = false;
 
@@ -244,10 +239,13 @@ int main(int argc, char* argv[]) {
         Message loginMessage(MessageCommand::LOGIN_REQUEST, globalClientId);
         uploadQueue.pushMessage(loginMessage);
 
+        std::cout << "2. Check current directory status..." << std::endl;
+        scan_directory(folderToWatch, uploadQueue, address, port);
+        std::cout << "-> Client and server file system aligned\n\n";
+
         //TODO: control the path, if not exists -> raise exception
-        std::thread tfw([&path_to_watch, &uploadQueue, &address, &port](){
-            scan_directory(path_to_watch, uploadQueue, address, port);
-            run_file_watcher(path_to_watch, uploadQueue);
+        std::thread tfw([&uploadQueue, &address, &port](){
+            run_file_watcher(folderToWatch, uploadQueue);
         });
 
         std::thread tcq([&uploadQueue, &shutdown, &address, &port](){
@@ -257,6 +255,7 @@ int main(int argc, char* argv[]) {
             }
         });
 
+        std::cout << "3. Ready to follow your folder evolution..." << std::endl;
         tfw.join();
         tcq.join();
     }
