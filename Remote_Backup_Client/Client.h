@@ -54,6 +54,9 @@ public:
     void doRead();
     void processRead(size_t t_bytesTransferred);
     bool getResponse() const { return m_response; }
+
+    std::string getClientId();
+
 };
 
 template<class Buffer>

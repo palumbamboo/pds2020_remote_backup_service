@@ -4,23 +4,6 @@
 
 #include "Session.h"
 
-std::string passwordHash(std::string s) {
-    std::string hashResult;
-    boost::uuids::detail::md5 hash;
-    boost::uuids::detail::md5::digest_type digest;
-
-    hash.process_bytes(s.data(), s.size());
-    hash.get_digest(digest);
-
-    std::string result;
-
-    const auto charDigest = reinterpret_cast<const char *>(&digest);
-    boost::algorithm::hex(charDigest, charDigest + sizeof(boost::uuids::detail::md5::digest_type),
-                          std::back_inserter(result));
-    hashResult = result;
-    return hashResult;
-}
-
 std::string randomString(size_t length ) {
     auto randomString = []() -> char
     {
@@ -104,11 +87,35 @@ void Session::processRead(size_t t_bytesTransferred)
         // controlla se esiste la cartella, se non esiste la crea
         std::cout << m_hashedPassword << std::endl;
 
+        auto it = userMap.find(m_username);
+        if(it != userMap.end()) {
+            std::cout << "Lo username esiste" <<std::endl;
+            std::string savedHashedPass = userMap[m_username][1];
+
+            if(savedHashedPass == m_hashedPassword) {
+                std::string savedClientID   = userMap[m_username][2];
+                m_clientId = savedClientID;
+                m_response = true;
+                m_message.setClientId(m_clientId);
+            } else {
+                m_response = false;
+            }
+        } else {
+            std::cout << "Lo username NON esiste" <<std::endl;
+            std::string newClientID = randomString(64);
+            std::vector<std::string> newUser{m_hashedPassword, newClientID};
+            m_clientId = newClientID;
+            m_message.setClientId(m_clientId);
+            userMap.insert(std::pair<std::string, std::vector<std::string>>(m_username, newUser));
+            m_response = true;
+            nlohmann::json jsonMap(userMap);
+            std::ofstream o(PASS_PATH);
+            o << std::setw(4) << jsonMap << std::endl;
+        }
+
+        // TODO: set m_response to true if login has success
 
         std::cout << m_clientId << std::endl;
-
-
-
 
         if (!std::filesystem::exists(m_clientId)) {
             if (std::filesystem::create_directories(m_clientId))
@@ -205,9 +212,6 @@ void Session::readData(std::istream &stream)
     // TODO: esiste il clientId? se no, errore, una directory per ogni client id e una cartella per ogni utente
     // TODO: info_request: se file esiste faccio hash con lo stesso metodo dell'altro e mando 1 se esiste e 0 se non esiste
 
-
-    std::cout << "m_Task " << m_task << " m_clientID " << m_clientId << std::endl;
-
     if (command == MessageCommand::INFO_REQUEST) {
         // INFO_REQUEST | | clientID | | path | | filehashato
         std::cout << "INFO" << std::endl;
@@ -242,6 +246,18 @@ void Session::readData(std::istream &stream)
 }
 
 void Session::doWriteResponse() {
+    if(m_message.getCommand() == MessageCommand::LOGIN_REQUEST) {
+        std::ostream requestStream(&m_requestBuf_);
+        m_message.setCommand(MessageCommand::LOGIN_RESPONSE);
+
+        if(m_response) {
+            requestStream << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << "\n\n";
+        } else {
+            requestStream << static_cast<int>(m_message.getCommand()) << " " << m_response << "\n\n";
+        }
+        writeBuffer(m_requestBuf_);
+    }
+
     if(m_message.getCommand() == MessageCommand::INFO_REQUEST) {
         std::ostream requestStream(&m_requestBuf_);
         m_message.setCommand(MessageCommand::INFO_RESPONSE);

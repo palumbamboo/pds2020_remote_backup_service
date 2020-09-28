@@ -1,12 +1,32 @@
 #include <iostream>
 #include <fstream>
 #include <boost/program_options.hpp>
+#include <map>
+#include <vector>
+#include <nlohmann/json.hpp>
 
 #include "Server.h"
+#include "UserMap.h"
 
 #define VERSION         "0.1"
 #define CONFIG_PATH     "remote_server.cfg"
-#define PASS_PATH       "password_server.cfg"
+
+nlohmann::json jsonMap;
+
+void load_users_password() {
+    std::ifstream passFile(PASS_PATH);
+    std::string fl;
+    getline(passFile, fl);
+    if(!fl.empty()) {
+        passFile.close();
+        std::ifstream passFile2(PASS_PATH);
+        passFile2 >> jsonMap;
+        userMap = jsonMap.get<std::map<std::string, std::vector<std::string>>>();
+        passFile2.close();
+    } else {
+        passFile.close();
+    }
+}
 
 void initializeConfigFiles(std::fstream &configFile, std::fstream &passFile) {
     configFile.open(CONFIG_PATH, std::fstream::app);
@@ -26,6 +46,12 @@ void initializeConfigFiles(std::fstream &configFile, std::fstream &passFile) {
 }
 
 int main(int argc, char* argv[]) {
+
+
+//    std::vector<std::string> ciao{"cavallo", "bello"};
+//    userMap.insert(std::pair<std::string, std::vector<std::string>>("gianni", ciao));
+
+
     try{
 
         std::cout << "============= REMOTE BACKUP SERVER =============" << "\n\n";
@@ -35,6 +61,7 @@ int main(int argc, char* argv[]) {
         std::string port;
 
         initializeConfigFiles(configFile, passFile);
+        load_users_password();
 
         try {
             boost::program_options::options_description generic("Generic options");

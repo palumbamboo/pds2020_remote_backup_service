@@ -107,7 +107,8 @@ void Client::doWriteFile(const boost::system::error_code& t_ec)
 void Client::sendLoginRequest(Message& t_message) {
     std::ostream requestStream(&m_request);
 
-    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << "\n\n";
+    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getUsername() << " "
+    << t_message.getPassword() << "\n\n";
 }
 
 void Client::sendInfoRequest(Message& t_message) {
@@ -122,11 +123,24 @@ void Client::processRead(size_t t_bytesTransferred) {
     std::istream requestStream(&m_request);
     requestStream >> m_task;
     requestStream.read(m_buf.data(), 1);
-    requestStream >> m_clientId;
-    requestStream.read(m_buf.data(), 1);
-    requestStream >> m_response;
 
-    //std::cout << "Client::processRead -> " << m_task << " " << m_clientId << " " << m_response << std::endl;
+    auto command = static_cast<MessageCommand>(stoi(m_task));
+    if (command == MessageCommand::INFO_RESPONSE) {
+        requestStream >> m_clientId;
+        requestStream.read(m_buf.data(), 1);
+        requestStream >> m_response;
+    }
+
+    if (command == MessageCommand::LOGIN_RESPONSE) {
+        requestStream >> m_clientId;
+        if (m_clientId == "0") {
+            m_response = false;
+        } else {
+            m_response = true;
+        }
+    }
+
+    std::cout << "Client::processRead -> " << m_task << " " << m_clientId << " " << m_response << std::endl;
 }
 
 void Client::doRead() {
@@ -143,4 +157,8 @@ void Client::doRead() {
 
 void Client::on_ready_to_reconnect(const boost::system::error_code &error) {
     try_connect();
+}
+
+std::string Client::getClientId() {
+    return m_clientId;
 }

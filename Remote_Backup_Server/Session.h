@@ -10,6 +10,8 @@
 #include <fstream>
 #include "Message.h"
 #include "FileToUpload.h"
+#include "UserMap.h"
+#include <nlohmann/json.hpp>
 
 using boost::asio::ip::tcp;
 
