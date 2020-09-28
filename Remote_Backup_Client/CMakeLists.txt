@@ -13,5 +13,5 @@ if(Boost_FOUND)
     link_directories(${Boost_LIBRARY_DIR})
 endif()
 
-add_executable(Remote_Backup_Client main.cpp FileWatcher.cpp FileWatcher.h Client.cpp Client.h UploadQueue.cpp UploadQueue.h Message.cpp Message.h FileToUpload.cpp FileToUpload.h)
+add_executable(Remote_Backup_Client main.cpp FileWatcher.cpp FileWatcher.h Client.cpp Client.h UploadQueue.cpp UploadQueue.h Message.cpp Message.h FileToUpload.cpp FileToUpload.h BackupClient.cpp BackupClient.h)
 target_link_libraries( Remote_Backup_Client ${Boost_LIBRARIES})

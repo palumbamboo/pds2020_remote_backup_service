@@ -17,11 +17,21 @@ Message UploadQueue::popMessage() {
     Message popped = queue.front();
     queue.pop();
     fullQueue.notify_one();
+    if(queue.empty())
+        destroyQueue.notify_one();
     return popped;
 }
 
 bool UploadQueue::readyToClose() {
-    std::lock_guard<std::mutex> lockGuard(mutex);
-    return queue.empty();
+    std::unique_lock<std::mutex> uniqueLock(mutex);
+    if(!queue.empty())
+        std::cout << "\tUPLOAD QUEUE NOT EMPTY -> waiting " << queue.size() << " messages" <<std::endl;
+    destroyQueue.wait(uniqueLock, [this](){ return queue.empty(); });
+    std::cout << "\tUPLOAD QUEUE -> empty" << std::endl;
+    return true;
 }
 
+int UploadQueue::queueSize() {
+    std::lock_guard<std::mutex> lockGuard(mutex);
+    return queue.size();
+}

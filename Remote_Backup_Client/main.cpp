@@ -8,6 +8,7 @@
 #include "UploadQueue.h"
 #include "Message.h"
 #include "FileToUpload.h"
+#include "BackupClient.h"
 
 #define VERSION       "0.1"
 #define CONFIG_PATH   "remote_client.cfg"
@@ -15,26 +16,46 @@
 
 std::string globalClientId;
 std::string folderToWatch;
-bool programShutdown = false;
 bool shutdownComplete = false;
 bool clientResponse;
-FileWatcher fw;
-UploadQueue uq;
+BackupClient backupClient;
+int ctrlc_times = 0;
 
 void initializeConfigFiles(std::fstream &configFile, std::fstream &clientIdFile);
 
+void timer_callback(const boost::system::error_code& errorCode) {
+    if(backupClient.get_uploadQueue()->queueSize() != 0) {
+        std::cout << "\tTIMER EXPIRED -> force close" << std::endl;
+        std::cout << "-> Shutdown complete, byebye!" << std::endl;
+        exit(2);
+    }
+}
+
 void signal_callback_handler(int signum) {
-    if(signum == 2) {
-        std::cout << "\n4. SHUTDOWN in progress..." << std::endl;
-        programShutdown = true;
-        fw.stop();
+    ctrlc_times++;
+    if(signum == 2 && ctrlc_times==1) {
+        std::cout << "\n\n4. SHUTDOWN in progress..." << std::endl;
+        if(backupClient.get_fileWatcher() != nullptr)
+            backupClient.get_fileWatcher()->stop();
         std::cout << "\tFilewatcher stopped" << std::endl;
 
-        // TODO - ADD TIMER
-        std::cout << "\tStarted timeout shutdown in 10 seconds" << std::endl;
-        while (!uq.readyToClose()) {
+        boost::asio::io_service ios;
+        boost::asio::deadline_timer timer(ios, boost::posix_time::seconds(10));
+        timer.async_wait(&timer_callback);
+
+        if(backupClient.get_uploadQueue() != nullptr && backupClient.get_uploadQueue()->queueSize() != 0) {
+            std::cout << "\tStarted timeout for force shutdown in 10 seconds" << std::endl;
         }
-        shutdownComplete = true;
+        std::thread teq([&timer](){
+           backupClient.get_uploadQueue()->readyToClose();
+           if(backupClient.get_currentClient()== nullptr)
+               timer.cancel();
+        });
+        teq.detach();
+        ios.run();
+        std::cout << "-> Shutdown complete, byebye!" << std::endl;
+        exit(signum);
+    } else {
         exit(signum);
     }
 }
@@ -56,17 +77,19 @@ std::string randomString(size_t length ) {
 
 void createClientSend(Message& message, const std::string& address, const std::string& port) {
     Client client(address, port, message);
+    backupClient.set_currentClient(client);
     client.start();
     if (message.getCommand() == MessageCommand::INFO_REQUEST) {
         clientResponse = client.getResponse();
     }
+    backupClient.delete_currentClient();
 }
 
 void run_file_watcher(const std::string & path_to_watch, UploadQueue& queue) {
     try {
         // Create a FileWatcher instance that will check the current folder for changes every 1 second
         FileWatcher fileWatcher{path_to_watch, std::chrono::milliseconds(1000)};
-        fw = fileWatcher;
+        backupClient.set_fileWatcher(fileWatcher);
 
         // Start monitoring a folder for changes and (in case of changes)
         // run a user provided lambda function
@@ -118,6 +141,7 @@ void scan_directory(const std::string& path_to_watch, UploadQueue& queue, const 
             std::string hash = fileToUpload.fileHash();
 
             Message message(MessageCommand::INFO_REQUEST, fileToUpload, globalClientId);
+
             createClientSend(message, address, port);
             if(clientResponse == 0) {
                 message.setCommand(MessageCommand::CREATE);
@@ -256,6 +280,7 @@ int main(int argc, char* argv[]) {
     }
 
     UploadQueue uploadQueue(100);
+    backupClient.set_uploadQueue(uploadQueue);
 
     signal(SIGINT, signal_callback_handler);
 

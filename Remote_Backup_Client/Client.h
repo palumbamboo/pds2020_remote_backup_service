@@ -53,7 +53,7 @@ public:
     void sendInfoRequest(Message& t_message);
     void doRead();
     void processRead(size_t t_bytesTransferred);
-    bool getResponse() { return m_response; }
+    bool getResponse() const { return m_response; }
 };
 
 template<class Buffer>

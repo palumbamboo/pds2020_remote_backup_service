@@ -24,7 +24,6 @@ class Message {
     MessageCommand command;
     std::string clientId;
 public:
-    Message()=default;
     explicit Message(MessageCommand _command,
                      std::string _clientId) :
             command(_command), clientId(std::move(_clientId)) {}

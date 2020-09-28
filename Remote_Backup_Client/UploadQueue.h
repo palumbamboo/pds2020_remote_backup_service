@@ -17,13 +17,14 @@ private:
     std::mutex mutex;
     std::condition_variable emptyQueue;
     std::condition_variable fullQueue;
+    std::condition_variable destroyQueue;
     int size;
 public:
-    explicit UploadQueue() {}
     explicit UploadQueue(int _size) : size(_size), mutex() {}
     ~UploadQueue()=default;
     void pushMessage(Message& message);
     Message popMessage();
+    int queueSize();
     bool readyToClose();
 };
 
