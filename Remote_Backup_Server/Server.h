@@ -16,6 +16,6 @@ private:
     tcp::acceptor acceptor;
 
 public:
-    Server(boost::asio::io_service& ioService, short t_port);
+    Server(boost::asio::io_service& ioService, const std::string& t_port);
     void callAccept();
 };

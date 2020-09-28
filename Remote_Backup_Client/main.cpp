@@ -75,6 +75,23 @@ std::string randomString(size_t length ) {
     return str;
 }
 
+std::string passwordHash(std::string s) {
+    std::string hashResult;
+    boost::uuids::detail::md5 hash;
+    boost::uuids::detail::md5::digest_type digest;
+
+    hash.process_bytes(s.data(), s.size());
+    hash.get_digest(digest);
+
+    std::string result;
+
+    const auto charDigest = reinterpret_cast<const char *>(&digest);
+    boost::algorithm::hex(charDigest, charDigest + sizeof(boost::uuids::detail::md5::digest_type),
+                          std::back_inserter(result));
+    hashResult = result;
+    return hashResult;
+}
+
 void createClientSend(Message& message, const std::string& address, const std::string& port) {
     Client client(address, port, message);
     backupClient.set_currentClient(client);
@@ -168,6 +185,7 @@ int main(int argc, char* argv[]) {
     std::string username;
     std::string folder;
     std::string clientId;
+    std::string hashedPassword;
 
     std::cout << "1. Service configuration phase..." << std::endl;
     initializeConfigFiles(configFile, clientIdFile);
@@ -270,6 +288,14 @@ int main(int argc, char* argv[]) {
         insert.append("client-id").append("=").append(clientId).append("\n");
         clientIdFile << insert;
 
+        std::string password;
+
+        std::cout << "Welcome user " << username << ", please insert your password here: ";
+        std::cin >> password;
+        std::cout << "password: " << password << std::endl;
+
+        hashedPassword = passwordHash(password);
+        std::cout << "hashed Password: " << hashedPassword << std::endl;
         globalClientId = clientId;
         folderToWatch = folder;
 
@@ -286,7 +312,7 @@ int main(int argc, char* argv[]) {
     signal(SIGINT, signal_callback_handler);
 
     try {
-        Message loginMessage(MessageCommand::LOGIN_REQUEST, globalClientId);
+        Message loginMessage(MessageCommand::LOGIN_REQUEST, username, hashedPassword);
         uploadQueue.pushMessage(loginMessage);
 
         std::cout << "2. Check current directory status..." << std::endl;
