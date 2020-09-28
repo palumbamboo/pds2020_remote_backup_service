@@ -4,6 +4,38 @@
 
 #include "Session.h"
 
+std::string passwordHash(std::string s) {
+    std::string hashResult;
+    boost::uuids::detail::md5 hash;
+    boost::uuids::detail::md5::digest_type digest;
+
+    hash.process_bytes(s.data(), s.size());
+    hash.get_digest(digest);
+
+    std::string result;
+
+    const auto charDigest = reinterpret_cast<const char *>(&digest);
+    boost::algorithm::hex(charDigest, charDigest + sizeof(boost::uuids::detail::md5::digest_type),
+                          std::back_inserter(result));
+    hashResult = result;
+    return hashResult;
+}
+
+std::string randomString(size_t length ) {
+    auto randomString = []() -> char
+    {
+        const char charset[] =
+                "0123456789"
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                "abcdefghijklmnopqrstuvwxyz";
+        const size_t max_index = (sizeof(charset) - 1);
+        return charset[ rand() % max_index ];
+    };
+    std::string str(length,0);
+    std::generate_n( str.begin(), length, randomString);
+    return str;
+}
+
 Session::Session(tcp::socket socket) : socket{std::move(socket)} {}
 
 void Session::start() {
@@ -70,7 +102,14 @@ void Session::processRead(size_t t_bytesTransferred)
 
     if (command == MessageCommand::LOGIN_REQUEST) {
         // controlla se esiste la cartella, se non esiste la crea
+        std::cout << m_hashedPassword << std::endl;
+
+
         std::cout << m_clientId << std::endl;
+
+
+
+
         if (!std::filesystem::exists(m_clientId)) {
             if (std::filesystem::create_directories(m_clientId))
                 std::cout << "directory: " << m_clientId << " correctly created!" << std::endl;
@@ -155,6 +194,8 @@ void Session::readData(std::istream &stream)
         stream.read(m_buf.data(), 1);
         stream >> m_hashedPassword;
         m_message.setCommand(command);
+
+        std::cout << m_username << " " << m_hashedPassword << std::endl;
         return;
     }
 

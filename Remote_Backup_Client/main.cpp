@@ -315,6 +315,7 @@ int main(int argc, char* argv[]) {
         Message loginMessage(MessageCommand::LOGIN_REQUEST, username, hashedPassword);
         uploadQueue.pushMessage(loginMessage);
 
+        /*
         std::cout << "2. Check current directory status..." << std::endl;
         scan_directory(folderToWatch, uploadQueue, address, port);
         std::cout << "-> Client and server file system aligned\n\n";
@@ -334,6 +335,7 @@ int main(int argc, char* argv[]) {
         std::cout << "3. Ready to follow your folder evolution..." << std::endl;
         tfw.join();
         tcq.join();
+        */
     }
     catch (std::exception& e) {
         std::cerr << e.what() << std::endl;
