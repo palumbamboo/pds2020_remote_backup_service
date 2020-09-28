@@ -150,9 +150,10 @@ void scan_directory(const std::string& path_to_watch, UploadQueue& queue, const 
             } else {
                 std::cout << "\tFILE: " << filenameStr << " already present on server -> skipping" << std::endl;
             }
-        }
-        else
-            std::cout << "??    " << filenameStr << '\n';
+        } else if(itEntry->is_directory()){
+            std::cout << "\tDIR: " << filenameStr << std::endl;
+        } else
+            std::cout << "??    " << filenameStr << std::endl;
     }
 }
 
@@ -279,7 +280,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    UploadQueue uploadQueue(100);
+    UploadQueue uploadQueue(10000);
     backupClient.set_uploadQueue(uploadQueue);
 
     signal(SIGINT, signal_callback_handler);
