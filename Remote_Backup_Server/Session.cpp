@@ -145,24 +145,27 @@ void Session::readData(std::istream &stream)
 {
     stream >> m_task;
     stream.read(m_buf.data(), 1);
+
+    auto command = static_cast<MessageCommand>(stoi(m_task));
+
+    if (command == MessageCommand::LOGIN_REQUEST) {
+        // controlla se esiste la cartella, se non esiste la crea
+        std::cout << "LOGIN" << std::endl;
+        stream >> m_username;
+        stream.read(m_buf.data(), 1);
+        stream >> m_hashedPassword;
+        m_message.setCommand(command);
+        return;
+    }
+
     stream >> m_clientId;
     stream.read(m_buf.data(), 1);
 
     // TODO: esiste il clientId? se no, errore, una directory per ogni client id e una cartella per ogni utente
     // TODO: info_request: se file esiste faccio hash con lo stesso metodo dell'altro e mando 1 se esiste e 0 se non esiste
 
-    auto command = static_cast<MessageCommand>(stoi(m_task));
 
     std::cout << "m_Task " << m_task << " m_clientID " << m_clientId << std::endl;
-
-    if (command == MessageCommand::LOGIN_REQUEST) {
-        // controlla se esiste la cartella, se non esiste la crea
-        std::cout << "LOGIN" << std::endl;
-        stream.read(m_buf.data(), 1);
-        m_message.setCommand(command);
-        m_message.setClientId(m_clientId);
-        return;
-    }
 
     if (command == MessageCommand::INFO_REQUEST) {
         // INFO_REQUEST | | clientID | | path | | filehashato
