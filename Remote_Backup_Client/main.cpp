@@ -81,7 +81,7 @@ void createClientSend(Message& message, const std::string& address, const std::s
     Client client(address, port, message);
     backupClient.set_currentClient(client);
     client.start();
-    if (message.getCommand() == MessageCommand::INFO_REQUEST) {
+    if (message.getCommand() == MessageCommand::INFO_REQUEST || message.getCommand() == MessageCommand::END_INFO_PHASE) {
         clientResponse = client.getResponse();
     } else if (message.getCommand() == MessageCommand::LOGIN_REQUEST) {
         clientResponse = client.getResponse();
@@ -160,6 +160,17 @@ void scan_directory(const std::string& path_to_watch, UploadQueue& queue, const 
         } else
             std::cout << "??    " << filenameStr << std::endl;
     }
+
+    FileToUpload fileToUpload(folderToWatch,  std::filesystem::path("/"));
+    Message message(MessageCommand::END_INFO_PHASE, fileToUpload, globalClientId);
+    createClientSend(message, address, port);
+    if(clientResponse == 1) {
+        std::cout << "\tClient folder and server folder correctly aligned!" << std::endl;
+    } else {
+        std::cout << "\tERROR with client and server folders synchronization" << std::endl;
+        exit(1);
+    }
+
 }
 
 int main(int argc, char* argv[]) {
@@ -253,6 +264,9 @@ int main(int argc, char* argv[]) {
                 insert.append(key).append("=").append(vm[key].as<std::string>()).append("\n");
                 configFile << insert;
             }
+        } else {
+            std::cout << "-> Service configuration cleared! See how to reconfigure running with -h\n\n";
+            return 0;
         }
 
         folderToWatch = folder;
@@ -276,8 +290,8 @@ int main(int argc, char* argv[]) {
         }
 
         if (globalClientId == "0") {
-            std::cout << "-> Service configuration aborted! Sorry " << username << ", you insert the wrong password!" << "\n\n";
-            exit(2);
+            std::cout << "-> Program execution aborted! You insert the wrong password 3 times!" << "\n\n";
+            return 1;
         }
 
         std::cout << "-> Service configuration done! Welcome back user " << username << ", your clientID is " << globalClientId << "\n\n";

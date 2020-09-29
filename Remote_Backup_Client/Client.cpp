@@ -129,7 +129,7 @@ void Client::processRead(size_t t_bytesTransferred) {
     requestStream.read(m_buf.data(), 1);
 
     auto command = static_cast<MessageCommand>(stoi(m_task));
-    if (command == MessageCommand::INFO_RESPONSE) {
+    if (command == MessageCommand::INFO_RESPONSE || command == MessageCommand::END_INFO_PHASE) {
         requestStream >> m_clientId;
         requestStream.read(m_buf.data(), 1);
         requestStream >> m_response;
