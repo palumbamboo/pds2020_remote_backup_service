@@ -18,7 +18,6 @@ std::string folderToWatch;
 bool shutdownComplete = false;
 bool clientResponse;
 BackupClient backupClient;
-int ctrlc_times = 0;
 
 void initializeConfigFiles(std::fstream &configFile);
 void performLogin(int times, const std::string& username, const std::string& address, const std::string& port);
@@ -32,32 +31,32 @@ void timer_callback(const boost::system::error_code& errorCode) {
 }
 
 void signal_callback_handler(int signum) {
-    ctrlc_times++;
-    if(signum == 2 && ctrlc_times==1) {
-        std::cout << "\n\n4. SHUTDOWN in progress..." << std::endl;
-        if(backupClient.get_fileWatcher() != nullptr)
-            backupClient.get_fileWatcher()->stop();
-        std::cout << "\tFilewatcher stopped" << std::endl;
+    std::cout << "\n\n4. SHUTDOWN in progress..." << std::endl;
+    if(backupClient.get_fileWatcher() != nullptr)
+        backupClient.get_fileWatcher()->stop();
+    std::cout << "\tFILEWATCHER -> stopped" << std::endl;
 
-        boost::asio::io_service ios;
-        boost::asio::deadline_timer timer(ios, boost::posix_time::seconds(10));
-        timer.async_wait(&timer_callback);
-
-        if(backupClient.get_uploadQueue() != nullptr && backupClient.get_uploadQueue()->queueSize() != 0) {
-            std::cout << "\tStarted timeout for force shutdown in 10 seconds" << std::endl;
-        }
-        std::thread teq([&timer](){
-           backupClient.get_uploadQueue()->readyToClose();
-           if(backupClient.get_currentClient()== nullptr)
-               timer.cancel();
-        });
-        teq.detach();
-        ios.run();
-        std::cout << "-> Shutdown complete, byebye!" << std::endl;
-        exit(signum);
-    } else {
-        exit(signum);
+    if(backupClient.get_currentClient() != nullptr) {
+        backupClient.delete_currentClient();
     }
+    std::cout << "\tOPEN CLIENT -> closed" << std::endl;
+
+    boost::asio::io_service ios;
+    boost::asio::deadline_timer timer(ios, boost::posix_time::seconds(10));
+    timer.async_wait(&timer_callback);
+
+    if(backupClient.get_uploadQueue() != nullptr && backupClient.get_uploadQueue()->queueSize() != 0) {
+        std::cout << "\tStarted timeout for force shutdown in 10 seconds" << std::endl;
+    }
+    std::thread teq([&timer](){
+        backupClient.get_uploadQueue()->readyToClose();
+        if(backupClient.get_currentClient()== nullptr)
+            timer.cancel();
+    });
+    teq.detach();
+    ios.run();
+    std::cout << "-> Shutdown complete, byebye!" << std::endl;
+    exit(signum);
 }
 
 std::string passwordHash(std::string s) {
@@ -170,7 +169,6 @@ void scan_directory(const std::string& path_to_watch, UploadQueue& queue, const 
         std::cout << "\tERROR with client and server folders synchronization" << std::endl;
         exit(1);
     }
-
 }
 
 int main(int argc, char* argv[]) {
@@ -244,11 +242,11 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         if (!vm.count("username")) {
-            std::cout << "Please add your username with -u [username]" << std::endl;
+            std::cout << "-> ERROR: Please add your username with -u [username]" << std::endl;
             return 1;
         }
         if (!vm.count("input-dir")) {
-            std::cout << "Please add that path to the folder to backup, use -h for help" << std::endl;
+            std::cout << "-> ERROR: Please add that path to the folder to backup, use -h for help" << std::endl;
             return 1;
         } else {
             char lastChar = folder.back();
@@ -334,7 +332,17 @@ void performLogin(int times, const std::string& username, const std::string& add
     } else {
         std::cout << "\tWrong password inserted, " << username << ", please retry: ";
     }
-    std::cin >> password;
+
+    // Hide terminal echo to insert user password
+    termios oldTerminal;
+    tcgetattr(STDIN_FILENO, &oldTerminal);
+    termios newTerminal = oldTerminal;
+    newTerminal.c_lflag &= ~ECHO;
+    tcsetattr(STDIN_FILENO, TCSANOW, &newTerminal);
+    getline(std::cin, password);
+    // Restore previous terminal
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldTerminal);
+    std::cout << std::endl;
 
     hashedPassword = passwordHash(password);
     Message loginMessage(MessageCommand::LOGIN_REQUEST, username, hashedPassword);

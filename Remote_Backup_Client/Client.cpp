@@ -48,7 +48,7 @@ void Client::try_connect() {
                                    else
                                    {
                                        _status = NOT_CONNECTED;
-                                       std::cout << "\tCONNECTION ERROR -> code: " << ec << " error: " << ec.message()
+                                       std::cout << "\tCONNECTION ERROR -> code: " << ec << "\n\terror: " << ec.message()
                                                  << std::endl;
                                        socket.close();
                                        m_timer.expires_from_now(boost::asio::chrono::seconds{2});
