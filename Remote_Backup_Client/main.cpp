@@ -266,7 +266,7 @@ int main(int argc, char* argv[]) {
             }
         } else {
             std::cout << "-> Service configuration cleared! See how to reconfigure running with -h\n\n";
-            return 0;
+            exit(1);
         }
 
         folderToWatch = folder;

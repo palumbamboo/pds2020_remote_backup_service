@@ -17,6 +17,6 @@ void Server::callAccept() {
 
 Server::Server(boost::asio::io_service& ioService, const std::string& t_port) :
                 socket{ioService}, acceptor{ioService, tcp::endpoint(tcp::v4(), stoi(t_port))} {
-    std::cout << "Server started\n";
+    std::cout << "-> Service configuration done! Server correctly started" << "\n\n";
     callAccept();
 }

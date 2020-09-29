@@ -9,10 +9,11 @@
 #include <filesystem>
 #include <fstream>
 #include <vector>
+#include <nlohmann/json.hpp>
+#include <random>
 #include "Message.h"
 #include "FileToUpload.h"
 #include "UserMap.h"
-#include <nlohmann/json.hpp>
 
 using boost::asio::ip::tcp;
 
@@ -36,6 +37,12 @@ private:
 
     template<class Buffer>
     void writeBuffer(Buffer& t_buffer);
+    static std::string randomString(size_t length);
+    void executeLoginCommand();
+    void executeInfoCommand();
+    void executeEndInfoCommand();
+    void executeRemoveCommand();
+    void executeCreateCommand(std::istream &requestStream);
 
 public:
     explicit Session(tcp::socket socket);
@@ -46,8 +53,8 @@ public:
     int createFile();
     void doReadFileContent(size_t t_bytesTransferred);
     void doWriteResponse();
-
     void createClientFolder() const;
+
 };
 
 template<class Buffer>

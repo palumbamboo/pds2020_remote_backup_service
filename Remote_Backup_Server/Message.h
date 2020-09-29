@@ -20,6 +20,8 @@ enum class MessageCommand {
     LOGIN_RESPONSE = 6,
 };
 
+MessageCommand parseIntToCommand(int _command);
+
 class Message {
     FileToUpload fileToUpload;
     MessageCommand command;
