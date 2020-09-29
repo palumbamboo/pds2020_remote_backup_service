@@ -160,12 +160,9 @@ void scan_directory(const std::string& path_to_watch, UploadQueue& queue, const 
             std::cout << "??    " << filenameStr << std::endl;
     }
 
-    FileToUpload fileToUpload(folderToWatch,  std::filesystem::path("/"));
-    Message message(MessageCommand::END_INFO_PHASE, fileToUpload, globalClientId);
+    Message message(MessageCommand::END_INFO_PHASE, globalClientId);
     createClientSend(message, address, port);
-    if(clientResponse == 1) {
-        std::cout << "\tClient folder and server folder correctly aligned!" << std::endl;
-    } else {
+    if(clientResponse != 1) {
         std::cout << "\tERROR with client and server folders synchronization" << std::endl;
         exit(1);
     }
@@ -252,6 +249,11 @@ int main(int argc, char* argv[]) {
             char lastChar = folder.back();
             if (lastChar != '/')
                 folder.append("/");
+            std::filesystem::path path(vm["input-dir"].as<std::string>());
+            if(!std::filesystem::exists(path)) {
+                std::cout << "-> ERROR: configured path does not exist!" << std::endl;
+                exit(1);
+            }
         }
 
         configFile.open(CONFIG_PATH, std::ofstream::out | std::ofstream::trunc);

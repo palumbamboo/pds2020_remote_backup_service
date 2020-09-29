@@ -87,7 +87,7 @@ void scan_directory(const std::string& path_to_watch, std::vector<std::string> &
         ++itEntry ) {
         const auto filenameStr = itEntry->path().string();
         if (itEntry->is_regular_file()) {
-            std::cout << "\tFILE: " << filenameStr << " added to current user file map" << std::endl;
+            std::cout << "\tFILE: " << filenameStr << " added to current user file vector" << std::endl;
             _currentFiles.push_back(filenameStr);
         } else if(itEntry->is_directory()){
             std::cout << "\tDIR: " << filenameStr << std::endl;
@@ -140,13 +140,8 @@ void Session::processRead(size_t t_bytesTransferred)
         std::cout << m_clientId << std::endl;
 
         if (m_response) {
-            if (!std::filesystem::exists(m_clientId)) {
-                if (std::filesystem::create_directories(m_clientId))
-                    std::cout << "directory: " << m_clientId << " correctly created!" << std::endl;
-            } else {
-                std::cout << "directory: " << m_clientId << " already exists!" << std::endl;
-                std::cout << "User correctly logged!" << std::endl;
-            }
+            createClientFolder();
+            std::cout << "User correctly logged!" << std::endl;
         }
         return;
     }
@@ -185,12 +180,30 @@ void Session::processRead(size_t t_bytesTransferred)
     }
 
     if (command == MessageCommand::END_INFO_PHASE) {
+        std::lock_guard<std::mutex> lg(mutex);
+
+        // Prima controllo che la chiave del client esista e
+        // se non ci sono file nel vettore, posso buttare la cartella corrente
+        auto it = userFilesMap.find(m_clientId);
+        if(it == userFilesMap.end() || userFilesMap[m_clientId].empty()) {
+            std::filesystem::remove_all(m_clientId);
+            createClientFolder();
+            m_response = true;
+            doWriteResponse();
+            return;
+        }
+
+        // Prendo i file che ho in questo momento
         std::vector<std::string> currentFiles;
         scan_directory(m_clientId, currentFiles);
-        for(auto &str : currentFiles)
-            std::cout << str << std::endl;
 
-        std::lock_guard<std::mutex> lg(mutex);
+        // Se la currentFiles è vuota significa che non ho niente del client
+        if(currentFiles.empty()) {
+            m_response = true;
+            doWriteResponse();
+            return;
+        }
+
         std::vector<std::string> filesToKeep = userFilesMap[m_clientId];
         std::sort(currentFiles.begin(), currentFiles.end());
         std::sort(filesToKeep.begin(), filesToKeep.end());
@@ -200,9 +213,15 @@ void Session::processRead(size_t t_bytesTransferred)
                             filesToKeep.begin(), filesToKeep.end(),
                             std::back_inserter(differences));
 
-        for (auto &i : differences) {
-            std::cout << i << std::endl;
+        for (auto &file : differences) {
+            if (!std::filesystem::remove(file)) {
+                std::cout << "Error during removing.. " << file << std::endl;
+            } else
+                std::cout << "Success! Removed.. " << file << std::endl;
+            std::cout << file << std::endl;
         }
+        m_response = true;
+        doWriteResponse();
         return;
     }
 
@@ -240,6 +259,15 @@ void Session::processRead(size_t t_bytesTransferred)
                                });
     }
 
+}
+
+void Session::createClientFolder() const {
+    if (!std::filesystem::exists(m_clientId)) {
+        if (std::filesystem::create_directories(m_clientId))
+            std::cout << "directory: " << m_clientId << " correctly created!" << std::endl;
+    } else {
+        std::cout << "directory: " << m_clientId << " already exists!" << std::endl;
+    }
 }
 
 
@@ -282,6 +310,7 @@ void Session::readData(std::istream &stream)
     if (command == MessageCommand::END_INFO_PHASE) {
         std::cout << "END_INFO_PHASE" << std::endl;
         m_message.setCommand(command);
+        return;
     }
 
     if (command == MessageCommand::REMOVE || command == MessageCommand::CREATE) {
@@ -327,6 +356,7 @@ void Session::doWriteResponse() {
         std::ostream requestStream(&m_requestBuf_);
         m_message.setCommand(MessageCommand::END_INFO_PHASE);
 
+        std::cout << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
         requestStream << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
         writeBuffer(m_requestBuf_);
     }

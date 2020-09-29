@@ -89,13 +89,9 @@ void Client::openDeleteFile(Message& t_message)
 void Client::doWriteFile(const boost::system::error_code& t_ec)
 {
     if (!t_ec) {
-        if (m_command == MessageCommand::INFO_REQUEST) {
-            doRead();
-            return;
-        } else if (m_command == MessageCommand::LOGIN_REQUEST) {
-            doRead();
-            return;
-        } else if (m_command == MessageCommand::END_INFO_PHASE) {
+        if (m_command == MessageCommand::INFO_REQUEST ||
+            m_command == MessageCommand::LOGIN_REQUEST ||
+            m_command == MessageCommand::END_INFO_PHASE) {
             doRead();
             return;
         }
@@ -118,7 +114,7 @@ void Client::sendLoginRequest(Message& t_message) {
     std::ostream requestStream(&m_request);
 
     requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getUsername() << " "
-    << t_message.getPassword() << "\n\n";
+                  << t_message.getPassword() << "\n\n";
 }
 
 void Client::sendInfoRequest(Message& t_message) {

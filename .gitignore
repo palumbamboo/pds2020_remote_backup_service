@@ -74,14 +74,6 @@ $RECYCLE.BIN/
 # CMake
 cmake-build-*/
 
-# exclude everything
-Remote_Backup_Client/files_to_send/*
-Remote_Backup_Server/files_to_send/*
-
-# exception to the rule
-!Remote_Backup_Client/files_to_send/.gitkeep 
-!Remote_Backup_Server/files_to_send/.gitkeep 
-
 # User-specific stuff
 .idea/**/workspace.xml
 .idea/**/tasks.xml

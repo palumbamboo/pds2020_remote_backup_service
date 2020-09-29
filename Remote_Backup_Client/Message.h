@@ -35,6 +35,9 @@ public:
                      FileToUpload& _fileToUpload,
                      std::string _clientId) :
             command(_command), fileToUpload(_fileToUpload), clientId(std::move(_clientId)) {}
+    explicit Message(MessageCommand _command,
+                     std::string _clientId) :
+            command(_command), clientId(std::move(_clientId)) {}
     ~Message()=default;
     MessageCommand getCommand() { return command; }
     std::string getClientId() { return clientId; }

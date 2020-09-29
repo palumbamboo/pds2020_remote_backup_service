@@ -46,6 +46,8 @@ public:
     int createFile();
     void doReadFileContent(size_t t_bytesTransferred);
     void doWriteResponse();
+
+    void createClientFolder() const;
 };
 
 template<class Buffer>
