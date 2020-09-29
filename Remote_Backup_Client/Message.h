@@ -23,10 +23,13 @@ class Message {
     FileToUpload fileToUpload;
     MessageCommand command;
     std::string clientId;
+    std::string username;
+    std::string password;
 public:
     explicit Message(MessageCommand _command,
-                     std::string _clientId) :
-            command(_command), clientId(std::move(_clientId)) {}
+                     std::string _username,
+                     std::string _password) :
+            command(_command), username(std::move(_username)), password(std::move(_password)) {}
     explicit Message(MessageCommand _command,
                      FileToUpload& _fileToUpload,
                      std::string _clientId) :
@@ -50,6 +53,22 @@ public:
 
     void setClientId(const std::string& _clientId) {
         clientId = _clientId;
+    }
+
+    const std::string &getUsername() {
+        return username;
+    }
+
+    const std::string &getPassword() {
+        return password;
+    }
+
+    void setUsername(const std::string &_username) {
+        username = _username;
+    }
+
+    void setPassword(const std::string &_password) {
+        password = _password;
     }
 };
 

@@ -3,6 +3,26 @@
 //
 
 #include "Session.h"
+#include <random>
+
+std::string randomString(size_t length ) {
+    {
+        const std::string charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+        std::random_device random_device;
+        std::mt19937 generator(random_device());
+        std::uniform_int_distribution<> distribution(0, charset.size() - 1);
+
+        std::string random_string;
+
+        for (std::size_t i = 0; i < length; ++i)
+        {
+            random_string += charset[distribution(generator)];
+        }
+
+        return random_string;
+    }
+}
 
 Session::Session(tcp::socket socket) : socket{std::move(socket)} {}
 
@@ -70,13 +90,47 @@ void Session::processRead(size_t t_bytesTransferred)
 
     if (command == MessageCommand::LOGIN_REQUEST) {
         // controlla se esiste la cartella, se non esiste la crea
-        std::cout << m_clientId << std::endl;
-        if (!std::filesystem::exists(m_clientId)) {
-            if (std::filesystem::create_directories(m_clientId))
-                std::cout << "directory: " << m_clientId << " correctly created!" << std::endl;
+        std::cout << m_hashedPassword << std::endl;
+
+        auto it = userMap.find(m_username);
+        if(it != userMap.end()) {
+            std::cout << "Lo username esiste" <<std::endl;
+            std::string savedHashedPass = userMap[m_username][0];
+
+            if(savedHashedPass == m_hashedPassword) {
+                std::string savedClientID   = userMap[m_username][1];
+                m_clientId = savedClientID;
+                std::cout << m_clientId << std::endl;
+                m_response = true;
+                m_message.setClientId(m_clientId);
+            } else {
+                std::cout << "La password è sbagliata -> ABORT!" << std::endl;
+                m_response = false;
+            }
         } else {
-            std::cout << "directory: " << m_clientId << " already exists!" << std::endl;
-            std::cout << "User correctly logged!" << std::endl;
+            std::cout << "Lo username NON esiste" <<std::endl;
+            std::string newClientID = randomString(64);
+            std::vector<std::string> newUser{m_hashedPassword, newClientID};
+            m_clientId = newClientID;
+            m_message.setClientId(m_clientId);
+            userMap.insert(std::pair<std::string, std::vector<std::string>>(m_username, newUser));
+            m_response = true;
+            nlohmann::json jsonMap(userMap);
+            std::ofstream o(PASS_PATH);
+            o << std::setw(4) << jsonMap << std::endl;
+        }
+
+        doWriteResponse();
+        std::cout << m_clientId << std::endl;
+
+        if (m_response) {
+            if (!std::filesystem::exists(m_clientId)) {
+                if (std::filesystem::create_directories(m_clientId))
+                    std::cout << "directory: " << m_clientId << " correctly created!" << std::endl;
+            } else {
+                std::cout << "directory: " << m_clientId << " already exists!" << std::endl;
+                std::cout << "User correctly logged!" << std::endl;
+            }
         }
         return;
     }
@@ -104,7 +158,7 @@ void Session::processRead(size_t t_bytesTransferred)
         return;
     }
 
-    if (command == MessageCommand::DELETE) {
+    if (command == MessageCommand::REMOVE) {
         std::filesystem::path total_filename;
         total_filename.append(m_clientId + "/" + std::string(m_fileName));
         if (!std::filesystem::remove(total_filename)) {
@@ -145,24 +199,26 @@ void Session::readData(std::istream &stream)
 {
     stream >> m_task;
     stream.read(m_buf.data(), 1);
+
+    auto command = static_cast<MessageCommand>(stoi(m_task));
+
+    if (command == MessageCommand::LOGIN_REQUEST) {
+        // controlla se esiste la cartella, se non esiste la crea
+        std::cout << "LOGIN" << std::endl;
+        stream >> m_username;
+        stream.read(m_buf.data(), 1);
+        stream >> m_hashedPassword;
+        m_message.setCommand(command);
+
+        std::cout << m_username << " " << m_hashedPassword << std::endl;
+        return;
+    }
+
     stream >> m_clientId;
     stream.read(m_buf.data(), 1);
 
     // TODO: esiste il clientId? se no, errore, una directory per ogni client id e una cartella per ogni utente
     // TODO: info_request: se file esiste faccio hash con lo stesso metodo dell'altro e mando 1 se esiste e 0 se non esiste
-
-    auto command = static_cast<MessageCommand>(stoi(m_task));
-
-    std::cout << "m_Task " << m_task << " m_clientID " << m_clientId << std::endl;
-
-    if (command == MessageCommand::LOGIN_REQUEST) {
-        // controlla se esiste la cartella, se non esiste la crea
-        std::cout << "LOGIN" << std::endl;
-        stream.read(m_buf.data(), 1);
-        m_message.setCommand(command);
-        m_message.setClientId(m_clientId);
-        return;
-    }
 
     if (command == MessageCommand::INFO_REQUEST) {
         // INFO_REQUEST | | clientID | | path | | filehashato
@@ -178,7 +234,7 @@ void Session::readData(std::istream &stream)
         return;
     }
 
-    if (command == MessageCommand::DELETE || command == MessageCommand::CREATE) {
+    if (command == MessageCommand::REMOVE || command == MessageCommand::CREATE) {
         // CREATE or DELETE | | clientID | | path | | fileSize, if DELETE = 0
         stream >> m_fileName;
         stream.read(m_buf.data(), 1);
@@ -198,6 +254,18 @@ void Session::readData(std::istream &stream)
 }
 
 void Session::doWriteResponse() {
+    if(m_message.getCommand() == MessageCommand::LOGIN_REQUEST) {
+        std::ostream requestStream(&m_requestBuf_);
+        m_message.setCommand(MessageCommand::LOGIN_RESPONSE);
+
+        if(m_response) {
+            requestStream << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << "\n\n";
+        } else {
+            requestStream << static_cast<int>(m_message.getCommand()) << " " << m_response << "\n\n";
+        }
+        writeBuffer(m_requestBuf_);
+    }
+
     if(m_message.getCommand() == MessageCommand::INFO_REQUEST) {
         std::ostream requestStream(&m_requestBuf_);
         m_message.setCommand(MessageCommand::INFO_RESPONSE);

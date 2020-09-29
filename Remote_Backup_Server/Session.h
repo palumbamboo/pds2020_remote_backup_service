@@ -10,6 +10,8 @@
 #include <fstream>
 #include "Message.h"
 #include "FileToUpload.h"
+#include "UserMap.h"
+#include <nlohmann/json.hpp>
 
 using boost::asio::ip::tcp;
 
@@ -28,6 +30,8 @@ private:
     FileToUpload m_fileToUpload;
     std::string m_fileHash;
     bool m_response;
+    std::string m_username;
+    std::string m_hashedPassword;
 
     template<class Buffer>
     void writeBuffer(Buffer& t_buffer);

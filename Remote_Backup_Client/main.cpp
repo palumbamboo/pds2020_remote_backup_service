@@ -12,7 +12,6 @@
 
 #define VERSION       "0.1"
 #define CONFIG_PATH   "remote_client.cfg"
-#define CLIENTID_PATH "client_identifier.cfg"
 
 std::string globalClientId;
 std::string folderToWatch;
@@ -21,7 +20,8 @@ bool clientResponse;
 BackupClient backupClient;
 int ctrlc_times = 0;
 
-void initializeConfigFiles(std::fstream &configFile, std::fstream &clientIdFile);
+void initializeConfigFiles(std::fstream &configFile);
+void performLogin(int times, const std::string& username, const std::string& address, const std::string& port);
 
 void timer_callback(const boost::system::error_code& errorCode) {
     if(backupClient.get_uploadQueue()->queueSize() != 0) {
@@ -60,19 +60,21 @@ void signal_callback_handler(int signum) {
     }
 }
 
-std::string randomString(size_t length ) {
-    auto randomString = []() -> char
-    {
-        const char charset[] =
-                "0123456789"
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                "abcdefghijklmnopqrstuvwxyz";
-        const size_t max_index = (sizeof(charset) - 1);
-        return charset[ rand() % max_index ];
-    };
-    std::string str(length,0);
-    std::generate_n( str.begin(), length, randomString);
-    return str;
+std::string passwordHash(std::string s) {
+    std::string hashResult;
+    boost::uuids::detail::md5 hash;
+    boost::uuids::detail::md5::digest_type digest;
+
+    hash.process_bytes(s.data(), s.size());
+    hash.get_digest(digest);
+
+    std::string result;
+
+    const auto charDigest = reinterpret_cast<const char *>(&digest);
+    boost::algorithm::hex(charDigest, charDigest + sizeof(boost::uuids::detail::md5::digest_type),
+                          std::back_inserter(result));
+    hashResult = result;
+    return hashResult;
 }
 
 void createClientSend(Message& message, const std::string& address, const std::string& port) {
@@ -81,6 +83,9 @@ void createClientSend(Message& message, const std::string& address, const std::s
     client.start();
     if (message.getCommand() == MessageCommand::INFO_REQUEST) {
         clientResponse = client.getResponse();
+    } else if (message.getCommand() == MessageCommand::LOGIN_REQUEST) {
+        clientResponse = client.getResponse();
+        globalClientId = client.getClientId();
     }
     backupClient.delete_currentClient();
 }
@@ -162,15 +167,13 @@ int main(int argc, char* argv[]) {
     std::cout << "============= REMOTE BACKUP CLIENT =============" << "\n\n";
 
     std::fstream configFile(CONFIG_PATH);
-    std::fstream clientIdFile(CLIENTID_PATH);
     std::string address;
     std::string port;
     std::string username;
     std::string folder;
-    std::string clientId;
 
     std::cout << "1. Service configuration phase..." << std::endl;
-    initializeConfigFiles(configFile, clientIdFile);
+    initializeConfigFiles(configFile);
 
     try {
         boost::program_options::options_description generic("Generic options");
@@ -197,14 +200,8 @@ int main(int argc, char* argv[]) {
                  boost::program_options::value<std::string>(&folder),
                  "set the folder to backup");
 
-        boost::program_options::options_description clientIdOption("Hidden Client ID");
-        clientIdOption.add_options()
-                ("client-id",
-                 boost::program_options::value<std::string>(&clientId),
-                 "USE ONLY IF YOU KNOW WHAT ARE YOU DOING");
-
         boost::program_options::options_description cmdline_options;
-        cmdline_options.add(generic).add(config).add(hidden).add(clientIdOption);
+        cmdline_options.add(generic).add(config).add(hidden);
 
         boost::program_options::options_description config_file_options;
         config_file_options.add(config).add(hidden);
@@ -220,9 +217,7 @@ int main(int argc, char* argv[]) {
         boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(cmdline_options).positional(positionalOptions).run(), vm);
 
         std::fstream ifs(CONFIG_PATH);
-        std::fstream cfs(CLIENTID_PATH);
         boost::program_options::store(parse_config_file(ifs, config_file_options), vm);
-        boost::program_options::store(parse_config_file(cfs, clientIdOption), vm);
 
         boost::program_options::notify(vm);
 
@@ -249,13 +244,7 @@ int main(int argc, char* argv[]) {
             if (lastChar != '/')
                 folder.append("/");
         }
-        if (!vm.count("client-id")) {
-            std::cout << "Generating a random clientID...";
-            clientId = randomString(64);
-            std::cout << " -> your clientID is " << clientId << std::endl;
-        }
 
-        std::cout << "-> Service configuration done! Welcome back user " << username << ", your clientID is " << clientId << "\n\n";
         configFile.open(CONFIG_PATH, std::ofstream::out | std::ofstream::trunc);
         if (!vm.count("clear-config")) {
             std::vector<std::string> keys{"username", "server-ip-address", "server-port", "input-dir"};
@@ -265,16 +254,10 @@ int main(int argc, char* argv[]) {
                 configFile << insert;
             }
         }
-        clientIdFile.open(CLIENTID_PATH, std::ofstream::out | std::ofstream::trunc);
-        std::string insert;
-        insert.append("client-id").append("=").append(clientId).append("\n");
-        clientIdFile << insert;
 
-        globalClientId = clientId;
         folderToWatch = folder;
 
         configFile.close();
-        clientIdFile.close();
     } catch (std::exception &e) {
         std::cout << "Exception during configuration: " << e.what() << std::endl;
         return 1;
@@ -286,9 +269,18 @@ int main(int argc, char* argv[]) {
     signal(SIGINT, signal_callback_handler);
 
     try {
-        Message loginMessage(MessageCommand::LOGIN_REQUEST, globalClientId);
-        uploadQueue.pushMessage(loginMessage);
+        int timesLogin = 0;
+        while(timesLogin < 3 && !clientResponse) {
+            performLogin(timesLogin, username, address, port);
+            timesLogin++;
+        }
 
+        if (globalClientId == "0") {
+            std::cout << "-> Service configuration aborted! Sorry " << username << ", you insert the wrong password!" << "\n\n";
+            exit(2);
+        }
+
+        std::cout << "-> Service configuration done! Welcome back user " << username << ", your clientID is " << globalClientId << "\n\n";
         std::cout << "2. Check current directory status..." << std::endl;
         scan_directory(folderToWatch, uploadQueue, address, port);
         std::cout << "-> Client and server file system aligned\n\n";
@@ -319,21 +311,31 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-void initializeConfigFiles(std::fstream &configFile, std::fstream &clientIdFile) {
+void performLogin(int times, const std::string& username, const std::string& address, const std::string& port) {
+    std::string password;
+    std::string hashedPassword;
+
+    if(times == 0) {
+        std::cout << "\tWelcome user " << username << ", please insert your password here: ";
+    } else {
+        std::cout << "\tWrong password inserted, " << username << ", please retry: ";
+    }
+    std::cin >> password;
+
+    hashedPassword = passwordHash(password);
+    Message loginMessage(MessageCommand::LOGIN_REQUEST, username, hashedPassword);
+    createClientSend(loginMessage, address, port);
+}
+
+void initializeConfigFiles(std::fstream &configFile) {
     configFile.open(CONFIG_PATH, std::fstream::app);
-    clientIdFile.open(CLIENTID_PATH, std::fstream::app);
 
     // If file does not exist, Create new file
     if (!configFile ) {
         configFile <<"\n";
     }
 
-    if (!clientIdFile ) {
-        clientIdFile <<"\n";
-    }
-
     configFile.close();
-    clientIdFile.close();
 }
 
 
