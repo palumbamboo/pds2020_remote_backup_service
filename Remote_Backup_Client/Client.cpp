@@ -29,6 +29,9 @@ void Client::start() {
     } else if(message.getCommand() == MessageCommand::INFO_REQUEST) {
         m_command = MessageCommand::INFO_REQUEST;
         sendInfoRequest(message);
+    } else if(message.getCommand() == MessageCommand::END_INFO_PHASE) {
+        m_command = MessageCommand::END_INFO_PHASE;
+        sendEndInfoPhase(message);
     }
     try_connect();
     ioService.run();
@@ -92,6 +95,9 @@ void Client::doWriteFile(const boost::system::error_code& t_ec)
         } else if (m_command == MessageCommand::LOGIN_REQUEST) {
             doRead();
             return;
+        } else if (m_command == MessageCommand::END_INFO_PHASE) {
+            doRead();
+            return;
         }
         if (m_sourceFile) {
             m_sourceFile.read(m_buf.data(), m_buf.size());
@@ -118,9 +124,14 @@ void Client::sendLoginRequest(Message& t_message) {
 void Client::sendInfoRequest(Message& t_message) {
     std::ostream requestStream(&m_request);
 
-    // TODO: send correct infos
     requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " "
                   << t_message.getFile().getPathToUpload() << " " << t_message.getFile().getFileStoredHash() << "\n\n";
+}
+
+void Client::sendEndInfoPhase(Message& t_message) {
+    std::ostream requestStream(&m_request);
+
+    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << "\n\n";
 }
 
 void Client::processRead(size_t t_bytesTransferred) {

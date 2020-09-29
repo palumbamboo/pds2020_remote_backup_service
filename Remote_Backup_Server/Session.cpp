@@ -81,6 +81,21 @@ void Session::doReadFileContent(size_t t_bytesTransferred)
                              });
 }
 
+void scan_directory(const std::string& path_to_watch, std::vector<std::string> &_currentFiles) {
+    for(auto itEntry = std::filesystem::recursive_directory_iterator(path_to_watch);
+        itEntry != std::filesystem::recursive_directory_iterator();
+        ++itEntry ) {
+        const auto filenameStr = itEntry->path().string();
+        if (itEntry->is_regular_file()) {
+            std::cout << "\tFILE: " << filenameStr << " added to current user file map" << std::endl;
+            _currentFiles.push_back(filenameStr);
+        } else if(itEntry->is_directory()){
+            std::cout << "\tDIR: " << filenameStr << std::endl;
+        } else
+            std::cout << "??    " << filenameStr << std::endl;
+    }
+}
+
 void Session::processRead(size_t t_bytesTransferred)
 {
     std::istream requestStream(&m_requestBuf_);
@@ -92,6 +107,7 @@ void Session::processRead(size_t t_bytesTransferred)
         // controlla se esiste la cartella, se non esiste la crea
         std::cout << m_hashedPassword << std::endl;
 
+        std::lock_guard<std::mutex> lg(mutex);
         auto it = userMap.find(m_username);
         if(it != userMap.end()) {
             std::cout << "Lo username esiste" <<std::endl;
@@ -145,9 +161,19 @@ void Session::processRead(size_t t_bytesTransferred)
             std::string hash = fileToUpload.fileHash();
             std::cout << "FILE path: " << m_fileName << " HASH: " << hash <<'\n';
 
-            if(m_fileHash == hash)
+            if(m_fileHash == hash) {
                 m_response = true;
-            else
+                std::lock_guard<std::mutex> lg(mutex);
+                auto it = userFilesMap.find(m_clientId);
+                if(it != userFilesMap.end()) {
+                    std::cout << "clientID presente" << std::endl;
+                    userFilesMap[m_clientId].push_back(total_filename);
+                } else {
+                    std::vector<std::string> files {total_filename};
+                    userFilesMap.insert(std::pair<std::string, std::vector<std::string>>(m_clientId, files));
+                    std::cout << "clientID wasn't present and i add it!" << std::endl;
+                }
+            } else
                 m_response = false;
         } catch (std::exception &e) {
             std::cout << e.what() << std::endl;
@@ -155,6 +181,28 @@ void Session::processRead(size_t t_bytesTransferred)
         }
 
         doWriteResponse();
+        return;
+    }
+
+    if (command == MessageCommand::END_INFO_PHASE) {
+        std::vector<std::string> currentFiles;
+        scan_directory(m_clientId, currentFiles);
+        for(auto &str : currentFiles)
+            std::cout << str << std::endl;
+
+        std::lock_guard<std::mutex> lg(mutex);
+        std::vector<std::string> filesToKeep = userFilesMap[m_clientId];
+        std::sort(currentFiles.begin(), currentFiles.end());
+        std::sort(filesToKeep.begin(), filesToKeep.end());
+
+        std::vector<std::string> differences;
+        std::set_difference(currentFiles.begin(), currentFiles.end(),
+                            filesToKeep.begin(), filesToKeep.end(),
+                            std::back_inserter(differences));
+
+        for (auto &i : differences) {
+            std::cout << i << std::endl;
+        }
         return;
     }
 
@@ -215,10 +263,8 @@ void Session::readData(std::istream &stream)
     }
 
     stream >> m_clientId;
+    m_message.setClientId(m_clientId);
     stream.read(m_buf.data(), 1);
-
-    // TODO: esiste il clientId? se no, errore, una directory per ogni client id e una cartella per ogni utente
-    // TODO: info_request: se file esiste faccio hash con lo stesso metodo dell'altro e mando 1 se esiste e 0 se non esiste
 
     if (command == MessageCommand::INFO_REQUEST) {
         // INFO_REQUEST | | clientID | | path | | filehashato
@@ -230,8 +276,12 @@ void Session::readData(std::istream &stream)
         std::cout << "m_fileName " << m_fileName << std::endl;
         std::cout << "hash of file " << m_fileHash << std::endl;
         m_message.setCommand(command);
-        m_message.setClientId(m_clientId);
         return;
+    }
+
+    if (command == MessageCommand::END_INFO_PHASE) {
+        std::cout << "END_INFO_PHASE" << std::endl;
+        m_message.setCommand(command);
     }
 
     if (command == MessageCommand::REMOVE || command == MessageCommand::CREATE) {
@@ -246,9 +296,8 @@ void Session::readData(std::istream &stream)
 
         m_message.setCommand(command);
         m_message.setFileToUpload(m_fileToUpload);
-        m_message.setClientId(m_clientId);
 
-        stream.read(m_buf.data(), 2);
+        //stream.read(m_buf.data(), 2);
         return;
     }
 }
@@ -269,6 +318,14 @@ void Session::doWriteResponse() {
     if(m_message.getCommand() == MessageCommand::INFO_REQUEST) {
         std::ostream requestStream(&m_requestBuf_);
         m_message.setCommand(MessageCommand::INFO_RESPONSE);
+
+        requestStream << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
+        writeBuffer(m_requestBuf_);
+    }
+
+    if(m_message.getCommand() == MessageCommand::END_INFO_PHASE) {
+        std::ostream requestStream(&m_requestBuf_);
+        m_message.setCommand(MessageCommand::END_INFO_PHASE);
 
         requestStream << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
         writeBuffer(m_requestBuf_);

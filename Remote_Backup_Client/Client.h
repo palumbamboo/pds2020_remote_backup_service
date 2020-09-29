@@ -51,6 +51,7 @@ public:
     void doWriteFile(const boost::system::error_code& t_ec);
     void sendLoginRequest(Message& t_message);
     void sendInfoRequest(Message& t_message);
+    void sendEndInfoPhase(Message& t_message);
     void doRead();
     void processRead(size_t t_bytesTransferred);
     bool getResponse() const { return m_response; }
