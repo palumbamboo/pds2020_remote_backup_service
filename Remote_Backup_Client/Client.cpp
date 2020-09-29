@@ -24,6 +24,7 @@ void Client::start() {
         std::cout << "\tREMOVE file from server: " << message.getFile().getPathName();
         openDeleteFile(message);
     } else if(message.getCommand() == MessageCommand::LOGIN_REQUEST) {
+        m_command = MessageCommand::LOGIN_REQUEST;
         sendLoginRequest(message);
     } else if(message.getCommand() == MessageCommand::INFO_REQUEST) {
         m_command = MessageCommand::INFO_REQUEST;
@@ -88,6 +89,9 @@ void Client::doWriteFile(const boost::system::error_code& t_ec)
         if (m_command == MessageCommand::INFO_REQUEST) {
             doRead();
             return;
+        } else if (m_command == MessageCommand::LOGIN_REQUEST) {
+            doRead();
+            return;
         }
         if (m_sourceFile) {
             m_sourceFile.read(m_buf.data(), m_buf.size());
@@ -139,8 +143,6 @@ void Client::processRead(size_t t_bytesTransferred) {
             m_response = true;
         }
     }
-
-    std::cout << "Client::processRead -> " << m_task << " " << m_clientId << " " << m_response << std::endl;
 }
 
 void Client::doRead() {

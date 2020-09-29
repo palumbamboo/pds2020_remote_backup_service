@@ -90,14 +90,16 @@ void Session::processRead(size_t t_bytesTransferred)
         auto it = userMap.find(m_username);
         if(it != userMap.end()) {
             std::cout << "Lo username esiste" <<std::endl;
-            std::string savedHashedPass = userMap[m_username][1];
+            std::string savedHashedPass = userMap[m_username][0];
 
             if(savedHashedPass == m_hashedPassword) {
-                std::string savedClientID   = userMap[m_username][2];
+                std::string savedClientID   = userMap[m_username][1];
                 m_clientId = savedClientID;
+                std::cout << m_clientId << std::endl;
                 m_response = true;
                 m_message.setClientId(m_clientId);
             } else {
+                std::cout << "La password è sbagliata -> ABORT!" << std::endl;
                 m_response = false;
             }
         } else {
@@ -113,16 +115,17 @@ void Session::processRead(size_t t_bytesTransferred)
             o << std::setw(4) << jsonMap << std::endl;
         }
 
-        // TODO: set m_response to true if login has success
-
+        doWriteResponse();
         std::cout << m_clientId << std::endl;
 
-        if (!std::filesystem::exists(m_clientId)) {
-            if (std::filesystem::create_directories(m_clientId))
-                std::cout << "directory: " << m_clientId << " correctly created!" << std::endl;
-        } else {
-            std::cout << "directory: " << m_clientId << " already exists!" << std::endl;
-            std::cout << "User correctly logged!" << std::endl;
+        if (m_response) {
+            if (!std::filesystem::exists(m_clientId)) {
+                if (std::filesystem::create_directories(m_clientId))
+                    std::cout << "directory: " << m_clientId << " correctly created!" << std::endl;
+            } else {
+                std::cout << "directory: " << m_clientId << " already exists!" << std::endl;
+                std::cout << "User correctly logged!" << std::endl;
+            }
         }
         return;
     }
@@ -150,7 +153,7 @@ void Session::processRead(size_t t_bytesTransferred)
         return;
     }
 
-    if (command == MessageCommand::DELETE) {
+    if (command == MessageCommand::REMOVE) {
         std::filesystem::path total_filename;
         total_filename.append(m_clientId + "/" + std::string(m_fileName));
         if (!std::filesystem::remove(total_filename)) {
@@ -226,7 +229,7 @@ void Session::readData(std::istream &stream)
         return;
     }
 
-    if (command == MessageCommand::DELETE || command == MessageCommand::CREATE) {
+    if (command == MessageCommand::REMOVE || command == MessageCommand::CREATE) {
         // CREATE or DELETE | | clientID | | path | | fileSize, if DELETE = 0
         stream >> m_fileName;
         stream.read(m_buf.data(), 1);

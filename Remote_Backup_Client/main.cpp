@@ -21,6 +21,7 @@ BackupClient backupClient;
 int ctrlc_times = 0;
 
 void initializeConfigFiles(std::fstream &configFile);
+void performLogin(int times, const std::string& username, const std::string& address, const std::string& port);
 
 void timer_callback(const boost::system::error_code& errorCode) {
     if(backupClient.get_uploadQueue()->queueSize() != 0) {
@@ -185,7 +186,6 @@ int main(int argc, char* argv[]) {
     std::string port;
     std::string username;
     std::string folder;
-    std::string hashedPassword;
 
     std::cout << "1. Service configuration phase..." << std::endl;
     initializeConfigFiles(configFile);
@@ -269,14 +269,7 @@ int main(int argc, char* argv[]) {
                 configFile << insert;
             }
         }
-        std::string password;
 
-        std::cout << "Welcome user " << username << ", please insert your password here: ";
-        std::cin >> password;
-        std::cout << "password: " << password << std::endl;
-
-        hashedPassword = passwordHash(password);
-        std::cout << "hashed Password: " << hashedPassword << std::endl;
         folderToWatch = folder;
 
         configFile.close();
@@ -291,8 +284,16 @@ int main(int argc, char* argv[]) {
     signal(SIGINT, signal_callback_handler);
 
     try {
-        Message loginMessage(MessageCommand::LOGIN_REQUEST, username, hashedPassword);
-        createClientSend(loginMessage, address, port);
+        int timesLogin = 0;
+        while(timesLogin < 3 && !clientResponse) {
+            performLogin(timesLogin, username, address, port);
+            timesLogin++;
+        }
+
+        if (globalClientId == "0") {
+            std::cout << "-> Service configuration aborted! Sorry " << username << ", you insert the wrong password!" << "\n\n";
+            exit(2);
+        }
 
         std::cout << "-> Service configuration done! Welcome back user " << username << ", your clientID is " << globalClientId << "\n\n";
         /*
@@ -325,6 +326,22 @@ int main(int argc, char* argv[]) {
     std::cout << "\n\n" << "============= BYE BYE =============" << "\n\n";
 
     return 0;
+}
+
+void performLogin(int times, const std::string& username, const std::string& address, const std::string& port) {
+    std::string password;
+    std::string hashedPassword;
+
+    if(times == 0) {
+        std::cout << "\tWelcome user " << username << ", please insert your password here: ";
+    } else {
+        std::cout << "\tWrong password inserted, " << username << ", please retry: ";
+    }
+    std::cin >> password;
+
+    hashedPassword = passwordHash(password);
+    Message loginMessage(MessageCommand::LOGIN_REQUEST, username, hashedPassword);
+    createClientSend(loginMessage, address, port);
 }
 
 void initializeConfigFiles(std::fstream &configFile) {
