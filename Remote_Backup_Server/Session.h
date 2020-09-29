@@ -62,8 +62,5 @@ void Session::writeBuffer(Buffer& t_buffer)
 {
     boost::asio::async_write(socket,
                              t_buffer,
-                             [this](boost::system::error_code ec, size_t /*length*/)
-                             {
-                                 std::cout << "Inside Write Buffer..................." << std::endl;
-                             });
+                             [this](boost::system::error_code ec, size_t /*length*/){});
 }

@@ -4,6 +4,8 @@
 
 #include "Session.h"
 
+void scan_directory(const std::string& path_to_watch, std::vector<std::string> &_currentFiles);
+
 Session::Session(tcp::socket socket) : socket{std::move(socket)} {}
 
 void Session::start() {
@@ -61,8 +63,7 @@ void Session::processRead(size_t t_bytesTransferred)
         }
         default: {
             std::cout << "\tERROR: unknown command!" << std::endl;
-            exit(1);
-        }
+            std::terminate();       }
     }
 }
 
@@ -111,6 +112,148 @@ void Session::readData(std::istream &stream) {
         std::cout << "\tERROR -> in message fields processing, abort" << std::endl;
         std::terminate();
     }
+}
+
+void Session::executeLoginCommand() {
+    std::lock_guard<std::mutex> lg(mutex);
+
+    auto it = userMap.find(m_username);
+    if(it != userMap.end()) {
+        std::string savedHashedPass = userMap[m_username][0];
+
+        if(savedHashedPass == m_hashedPassword) {
+            std::string savedClientID   = userMap[m_username][1];
+            m_clientId = savedClientID;
+            m_response = true;
+            m_message.setClientId(m_clientId);
+        } else {
+            std::cout << "\tERROR -> The password is wrong -> ABORT!" << std::endl;
+            m_response = false;
+        }
+    } else {
+        std::cout << "Lo username NON esiste" <<std::endl;
+        std::string newClientID = randomString(64);
+        std::vector<std::string> newUser{m_hashedPassword, newClientID};
+        m_clientId = newClientID;
+        m_message.setClientId(m_clientId);
+        userMap.insert(std::pair<std::string, std::vector<std::string>>(m_username, newUser));
+        m_response = true;
+        nlohmann::json jsonMap(userMap);
+        std::ofstream o(PASS_PATH);
+        o << std::setw(4) << jsonMap << std::endl;
+    }
+
+    doWriteResponse();
+
+    if (m_response) {
+        createClientFolder();
+        std::cout << "User correctly logged!" << std::endl;
+    }
+}
+
+void Session::executeInfoCommand() {
+    std::filesystem::path total_filename(m_clientId + "/" + std::string(m_fileName));
+    FileToUpload fileToUpload(total_filename);
+
+    try {
+        std::string hash = fileToUpload.fileHash();
+
+        if(m_fileHash == hash) {
+            std::lock_guard<std::mutex> lg(mutex);
+            m_response = true;
+            auto it = userFilesMap.find(m_clientId);
+            if(it != userFilesMap.end()) {
+                userFilesMap[m_clientId].push_back(total_filename);
+            } else {
+                std::vector<std::string> files {total_filename};
+                userFilesMap.insert(std::pair<std::string, std::vector<std::string>>(m_clientId, files));
+            }
+        } else
+            m_response = false;
+    } catch (std::exception &e) {
+        std::cout << e.what() << std::endl;
+        m_response = false;
+    }
+
+    doWriteResponse();
+}
+
+void Session::executeEndInfoCommand() {
+    std::lock_guard<std::mutex> lg(mutex);
+
+    // Prima controllo che la chiave del client esista e
+    // se non ci sono file nel vettore, posso buttare la cartella corrente
+    auto it = userFilesMap.find(m_clientId);
+    if(it == userFilesMap.end() || userFilesMap[m_clientId].empty()) {
+        std::filesystem::remove_all(m_clientId);
+        createClientFolder();
+        m_response = true;
+        doWriteResponse();
+        return;
+    }
+
+    // Prendo i file che ho in questo momento
+    std::vector<std::string> currentFiles;
+    scan_directory(m_clientId, currentFiles);
+
+    // Se la currentFiles è vuota significa che non ho niente del client
+    if(currentFiles.empty()) {
+        m_response = true;
+        doWriteResponse();
+        return;
+    }
+
+    std::vector<std::string> filesToKeep = userFilesMap[m_clientId];
+    std::sort(currentFiles.begin(), currentFiles.end());
+    std::sort(filesToKeep.begin(), filesToKeep.end());
+    std::vector<std::string> differences;
+    std::set_difference(currentFiles.begin(), currentFiles.end(),
+                        filesToKeep.begin(), filesToKeep.end(),
+                        std::back_inserter(differences));
+
+    int countError = 0;
+    for (auto &file : differences) {
+        if (!std::filesystem::remove(file)) {
+            std::cout << "\tERROR deleting file " << file << " for client " << m_clientId << " alignment!" << std::endl;
+            m_response = false;
+            countError++;
+        }
+    }
+
+    // check if some error in deleting files
+    if (countError == 0)
+        m_response = true;
+
+    doWriteResponse();
+}
+
+void Session::executeRemoveCommand() {
+    std::filesystem::path total_filename(m_clientId + "/" + std::string(m_fileName));
+    // TODO : Check, removes but wrong message printed
+    if (!std::filesystem::remove(total_filename)) {
+        std::cout << "\tERROR deleting file " << m_fileName << " for client " << m_clientId << std::endl;
+    }
+}
+
+void Session::executeCreateCommand(std::istream &requestStream) {
+    if (createFile() == -1)
+        return;
+
+    do {
+        requestStream.read(m_buf.data(), m_buf.size());
+        m_outputFile.write(m_buf.data(), requestStream.gcount());
+    } while (requestStream.gcount() > 0);
+
+    auto self = shared_from_this();
+    socket.async_read_some(boost::asio::buffer(m_buf.data(), m_buf.size()),
+                           [this, self](boost::system::error_code ec, size_t bytes)
+                           {
+                               if (!ec)
+                                   doReadFileContent(bytes);
+                               else {
+                                   std::cout << "\tERROR -> error reading from socket (client " << m_clientId << ") buffer: " << ec.message() << std::endl;
+                               }
+                           });
 }
 
 void Session::doWriteResponse() {
@@ -165,7 +308,7 @@ void Session::doReadFileContent(size_t t_bytesTransferred)
         m_outputFile.write(m_buf.data(), static_cast<std::streamsize>(t_bytesTransferred));
 
         if (m_outputFile.tellp() >= static_cast<std::streamsize>(m_fileSize)) {
-            std::cout << "\tReceived file: " << m_fileName << "from client " << m_clientId << std::endl;
+            std::cout << "\tReceived file: " << m_fileName << " from client " << m_clientId << std::endl;
             return;
         }
     }
@@ -175,6 +318,15 @@ void Session::doReadFileContent(size_t t_bytesTransferred)
                            {
                                doReadFileContent(bytes);
                            });
+}
+
+void Session::createClientFolder() const {
+    if (!std::filesystem::exists(m_clientId)) {
+        if (std::filesystem::create_directories(m_clientId))
+            std::cout << "directory: " << m_clientId << " correctly created!" << std::endl;
+    } else {
+        std::cout << "directory: " << m_clientId << " already exists!" << std::endl;
+    }
 }
 
 void scan_directory(const std::string& path_to_watch, std::vector<std::string> &_currentFiles) {
@@ -188,178 +340,17 @@ void scan_directory(const std::string& path_to_watch, std::vector<std::string> &
     }
 }
 
-void Session::executeCreateCommand(std::istream &requestStream) {
-    if (createFile() == -1)
-        return;
-
-    do {
-        requestStream.read(m_buf.data(), m_buf.size());
-        m_outputFile.write(m_buf.data(), requestStream.gcount());
-    } while (requestStream.gcount() > 0);
-
-    auto self = shared_from_this();
-    socket.async_read_some(boost::asio::buffer(m_buf.data(), m_buf.size()),
-                           [this, self](boost::system::error_code ec, size_t bytes)
-                           {
-                               if (!ec)
-                                   doReadFileContent(bytes);
-                               else {
-                                   std::cout << "\tERROR -> error reading from socket (client " << m_clientId << ") buffer: " << ec.message() << std::endl;
-                               }
-                           });
-}
-
-void Session::executeRemoveCommand() {
-    std::filesystem::path total_filename(m_clientId + "/" + std::string(m_fileName));
-    if (!std::filesystem::remove(total_filename)) {
-        std::cout << "\tERROR deleting file " << m_fileName << " for client " << m_clientId << std::endl;
-    }
-}
-
-void Session::executeEndInfoCommand() {
-    std::lock_guard<std::mutex> lg(mutex);
-
-    // Prima controllo che la chiave del client esista e
-// se non ci sono file nel vettore, posso buttare la cartella corrente
-    auto it = userFilesMap.find(m_clientId);
-    if(it == userFilesMap.end() || userFilesMap[m_clientId].empty()) {
-        std::filesystem::remove_all(m_clientId);
-        createClientFolder();
-        m_response = true;
-        doWriteResponse();
-        return;
-    }
-
-    // Prendo i file che ho in questo momento
-    std::vector<std::string> currentFiles;
-    scan_directory(m_clientId, currentFiles);
-
-    // Se la currentFiles è vuota significa che non ho niente del client
-    if(currentFiles.empty()) {
-        m_response = true;
-        doWriteResponse();
-        return;
-    }
-
-    std::vector<std::string> filesToKeep = userFilesMap[m_clientId];
-    std::sort(currentFiles.begin(), currentFiles.end());
-    std::sort(filesToKeep.begin(), filesToKeep.end());
-
-    std::vector<std::string> differences;
-    std::set_difference(currentFiles.begin(), currentFiles.end(),
-                        filesToKeep.begin(), filesToKeep.end(),
-                        std::back_inserter(differences));
-
-    for (auto &file : differences) {
-        if (!std::filesystem::remove(file)) {
-            std::cout << "Error during removing.. " << file << std::endl;
-        } else
-            std::cout << "Success! Removed.. " << file << std::endl;
-        std::cout << file << std::endl;
-    }
-    m_response = true;
-    doWriteResponse();
-}
-
-void Session::executeInfoCommand() {
-    std::cout << "INSIDE COMMAND = INFO_REQUEST " << std::endl;
-    std::filesystem::path total_filename;
-    total_filename.append(m_clientId + "/" + std::string(m_fileName));
-    FileToUpload fileToUpload(total_filename);
-    try {
-        std::string hash = fileToUpload.fileHash();
-        std::cout << "FILE path: " << m_fileName << " HASH: " << hash << '\n';
-
-        if(m_fileHash == hash) {
-            m_response = true;
-            std::lock_guard<std::mutex> lg(mutex);
-            auto it = userFilesMap.find(m_clientId);
-            if(it != userFilesMap.end()) {
-                std::cout << "clientID presente" << std::endl;
-                userFilesMap[m_clientId].push_back(total_filename);
-            } else {
-                std::vector<std::string> files {total_filename};
-                userFilesMap.insert(std::pair<std::string, std::vector<std::string>>(m_clientId, files));
-                std::cout << "clientID wasn't present and i add it!" << std::endl;
-            }
-        } else
-            m_response = false;
-    } catch (std::exception &e) {
-        std::cout << e.what() << std::endl;
-        m_response = false;
-    }
-
-    doWriteResponse();
-}
-
 std::string Session::randomString(size_t length) {
-    {
-        const std::string charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    const std::string charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    std::random_device random_device;
+    std::mt19937 generator(random_device());
+    std::uniform_int_distribution<> distribution(0, charset.size() - 1);
+    std::string random_string;
 
-        std::random_device random_device;
-        std::mt19937 generator(random_device());
-        std::uniform_int_distribution<> distribution(0, charset.size() - 1);
+    for (std::size_t i = 0; i < length; ++i)
+        random_string += charset[distribution(generator)];
 
-        std::string random_string;
-
-        for (std::size_t i = 0; i < length; ++i)
-        {
-            random_string += charset[distribution(generator)];
-        }
-
-        return random_string;
-    }
-}
-
-void Session::executeLoginCommand() {
-    std::cout << m_hashedPassword << std::endl;
-
-    std::lock_guard<std::mutex> lg(mutex);
-    auto it = userMap.find(m_username);
-    if(it != userMap.end()) {
-        std::cout << "Lo username esiste" <<std::endl;
-        std::string savedHashedPass = userMap[m_username][0];
-
-        if(savedHashedPass == m_hashedPassword) {
-            std::string savedClientID   = userMap[m_username][1];
-            m_clientId = savedClientID;
-            std::cout << m_clientId << std::endl;
-            m_response = true;
-            m_message.setClientId(m_clientId);
-        } else {
-            std::cout << "La password è sbagliata -> ABORT!" << std::endl;
-            m_response = false;
-        }
-    } else {
-        std::cout << "Lo username NON esiste" <<std::endl;
-        std::string newClientID = randomString(64);
-        std::vector<std::string> newUser{m_hashedPassword, newClientID};
-        m_clientId = newClientID;
-        m_message.setClientId(m_clientId);
-        userMap.insert(std::pair<std::string, std::vector<std::string>>(m_username, newUser));
-        m_response = true;
-        nlohmann::json jsonMap(userMap);
-        std::ofstream o(PASS_PATH);
-        o << std::setw(4) << jsonMap << std::endl;
-    }
-
-    doWriteResponse();
-    std::cout << m_clientId << std::endl;
-
-    if (m_response) {
-        createClientFolder();
-        std::cout << "User correctly logged!" << std::endl;
-    }
-    return;
-}
-
-void Session::createClientFolder() const {
-    if (!std::filesystem::exists(m_clientId)) {
-        if (std::filesystem::create_directories(m_clientId))
-            std::cout << "directory: " << m_clientId << " correctly created!" << std::endl;
-    } else {
-        std::cout << "directory: " << m_clientId << " already exists!" << std::endl;
-    }
+    return random_string;
 }
 
 

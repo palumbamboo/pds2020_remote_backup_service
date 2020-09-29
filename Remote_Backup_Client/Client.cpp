@@ -17,12 +17,13 @@ Client::~Client() {
 }
 
 void Client::start() {
+    // TODO: switch case
     if(message.getCommand() == MessageCommand::CREATE) {
-        openFile(message);
         std::cout << "\tSEND file to server: " << message.getFile().getPathName();
+        openFile(message);
     } else if(message.getCommand() == MessageCommand::REMOVE){
         std::cout << "\tREMOVE file from server: " << message.getFile().getPathName();
-        openDeleteFile(message);
+        sendRemoveRequest(message);
     } else if(message.getCommand() == MessageCommand::LOGIN_REQUEST) {
         m_command = MessageCommand::LOGIN_REQUEST;
         sendLoginRequest(message);
@@ -31,7 +32,7 @@ void Client::start() {
         sendInfoRequest(message);
     } else if(message.getCommand() == MessageCommand::END_INFO_PHASE) {
         m_command = MessageCommand::END_INFO_PHASE;
-        sendEndInfoPhase(message);
+        sendEndInfoRequest(message);
     }
     try_connect();
     ioService.run();
@@ -77,15 +78,6 @@ void Client::openFile(Message& t_message)
     requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " " << t_message.getFile().getPathToUpload() << " " << t_message.getFile().getFileSize() << "\n\n";
 }
 
-void Client::openDeleteFile(Message& t_message)
-{
-    std::string t_path = t_message.getFile().getPathToUpload();
-    t_message.getFile().setFileSize(0);
-
-    std::ostream requestStream(&m_request);
-    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " " << t_message.getFile().getPathToUpload() << " " << t_message.getFile().getFileSize() << "\n\n";
-}
-
 void Client::doWriteFile(const boost::system::error_code& t_ec)
 {
     if (!t_ec) {
@@ -124,10 +116,18 @@ void Client::sendInfoRequest(Message& t_message) {
                   << t_message.getFile().getPathToUpload() << " " << t_message.getFile().getFileStoredHash() << "\n\n";
 }
 
-void Client::sendEndInfoPhase(Message& t_message) {
+void Client::sendEndInfoRequest(Message& t_message) {
     std::ostream requestStream(&m_request);
 
     requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << "\n\n";
+}
+
+void Client::sendRemoveRequest(Message& t_message)
+{
+    std::string t_path = t_message.getFile().getPathToUpload();
+    std::ostream requestStream(&m_request);
+
+    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " " << t_message.getFile().getPathToUpload() << "\n\n";
 }
 
 void Client::processRead(size_t t_bytesTransferred) {
