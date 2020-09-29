@@ -60,21 +60,6 @@ void signal_callback_handler(int signum) {
     }
 }
 
-std::string randomString(size_t length ) {
-    auto randomString = []() -> char
-    {
-        const char charset[] =
-                "0123456789"
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                "abcdefghijklmnopqrstuvwxyz";
-        const size_t max_index = (sizeof(charset) - 1);
-        return charset[ rand() % max_index ];
-    };
-    std::string str(length,0);
-    std::generate_n( str.begin(), length, randomString);
-    return str;
-}
-
 std::string passwordHash(std::string s) {
     std::string hashResult;
     boost::uuids::detail::md5 hash;
@@ -296,7 +281,6 @@ int main(int argc, char* argv[]) {
         }
 
         std::cout << "-> Service configuration done! Welcome back user " << username << ", your clientID is " << globalClientId << "\n\n";
-        /*
         std::cout << "2. Check current directory status..." << std::endl;
         scan_directory(folderToWatch, uploadQueue, address, port);
         std::cout << "-> Client and server file system aligned\n\n";
@@ -316,7 +300,6 @@ int main(int argc, char* argv[]) {
         std::cout << "3. Ready to follow your folder evolution..." << std::endl;
         tfw.join();
         tcq.join();
-        */
     }
     catch (std::exception& e) {
         std::cerr << e.what() << std::endl;

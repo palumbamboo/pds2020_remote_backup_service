@@ -3,20 +3,25 @@
 //
 
 #include "Session.h"
+#include <random>
 
 std::string randomString(size_t length ) {
-    auto randomString = []() -> char
     {
-        const char charset[] =
-                "0123456789"
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                "abcdefghijklmnopqrstuvwxyz";
-        const size_t max_index = (sizeof(charset) - 1);
-        return charset[ rand() % max_index ];
-    };
-    std::string str(length,0);
-    std::generate_n( str.begin(), length, randomString);
-    return str;
+        const std::string charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+        std::random_device random_device;
+        std::mt19937 generator(random_device());
+        std::uniform_int_distribution<> distribution(0, charset.size() - 1);
+
+        std::string random_string;
+
+        for (std::size_t i = 0; i < length; ++i)
+        {
+            random_string += charset[distribution(generator)];
+        }
+
+        return random_string;
+    }
 }
 
 Session::Session(tcp::socket socket) : socket{std::move(socket)} {}
