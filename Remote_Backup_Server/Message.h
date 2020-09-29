@@ -15,8 +15,9 @@ enum class MessageCommand {
     REMOVE = 1,
     INFO_REQUEST = 2,
     INFO_RESPONSE = 3,
-    LOGIN_REQUEST = 4,
-    LOGIN_RESPONSE = 5,
+    END_INFO_PHASE = 4,
+    LOGIN_REQUEST = 5,
+    LOGIN_RESPONSE = 6,
 };
 
 class Message {

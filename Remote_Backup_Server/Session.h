@@ -8,6 +8,7 @@
 #include <boost/asio.hpp>
 #include <filesystem>
 #include <fstream>
+#include <vector>
 #include "Message.h"
 #include "FileToUpload.h"
 #include "UserMap.h"

@@ -170,7 +170,6 @@ void scan_directory(const std::string& path_to_watch, UploadQueue& queue, const 
         std::cout << "\tERROR with client and server folders synchronization" << std::endl;
         exit(1);
     }
-
 }
 
 int main(int argc, char* argv[]) {
