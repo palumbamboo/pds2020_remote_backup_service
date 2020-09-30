@@ -21,6 +21,7 @@ enum class MessageCommand {
 };
 
 MessageCommand parseIntToCommand(int _command);
+std::string parseCommandToString(MessageCommand _command);
 
 class Message {
     FileToUpload fileToUpload;

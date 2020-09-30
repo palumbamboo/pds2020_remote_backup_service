@@ -25,3 +25,25 @@ MessageCommand parseIntToCommand(int _command) {
         }
     }
 }
+
+std::string parseCommandToString(MessageCommand _command) {
+    switch (_command) {
+        case MessageCommand::CREATE:
+            return "CREATE";
+        case MessageCommand::REMOVE:
+            return "REMOVE";
+        case MessageCommand::INFO_REQUEST:
+            return "INFO REQUEST";
+        case MessageCommand::INFO_RESPONSE:
+            return "INFO RESPONSE";
+        case MessageCommand::END_INFO_PHASE:
+            return "END INFO PHASE";
+        case MessageCommand::LOGIN_REQUEST:
+            return "LOGIN REQUEST";
+        case MessageCommand::LOGIN_RESPONSE:
+            return "LOGIN RESPONSE";
+        default: {
+            throw std::runtime_error("invalid command parsing");
+        }
+    }
+}
