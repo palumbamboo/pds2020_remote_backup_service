@@ -17,22 +17,44 @@ Client::~Client() {
 }
 
 void Client::start() {
-    // TODO: switch case
-    if(message.getCommand() == MessageCommand::CREATE) {
-        std::cout << "\tSEND file to server: " << message.getFile().getPathName();
-        openFile(message);
-    } else if(message.getCommand() == MessageCommand::REMOVE){
-        std::cout << "\tREMOVE file from server: " << message.getFile().getPathName();
-        sendRemoveRequest(message);
-    } else if(message.getCommand() == MessageCommand::LOGIN_REQUEST) {
-        m_command = MessageCommand::LOGIN_REQUEST;
-        sendLoginRequest(message);
-    } else if(message.getCommand() == MessageCommand::INFO_REQUEST) {
-        m_command = MessageCommand::INFO_REQUEST;
-        sendInfoRequest(message);
-    } else if(message.getCommand() == MessageCommand::END_INFO_PHASE) {
-        m_command = MessageCommand::END_INFO_PHASE;
-        sendEndInfoRequest(message);
+    MessageCommand command = message.getCommand();
+
+    switch (command) {
+        // LOGIN_REQUEST | | username | | hashed password
+        case MessageCommand::LOGIN_REQUEST: {
+            m_command = MessageCommand::LOGIN_REQUEST;
+            sendLoginRequest(message);
+            break;
+        }
+            // INFO_REQUEST | | clientID | | path | | hashed file
+        case MessageCommand::INFO_REQUEST: {
+            m_command = MessageCommand::INFO_REQUEST;
+            sendInfoRequest(message);
+            break;
+        }
+            // END_INFO_PHASE | | clientID
+        case MessageCommand::END_INFO_PHASE: {
+            m_command = MessageCommand::END_INFO_PHASE;
+            sendEndInfoRequest(message);
+            break;
+        }
+            // REMOVE | | clientID | | path
+        case MessageCommand::REMOVE: {
+            std::cout << "\tREMOVE file from server: " << message.getFile().getPathName();
+            sendRemoveRequest(message);
+            break;
+        }
+            // CREATE | | clientID | | path | | file size
+            // file data inside request body
+        case MessageCommand::CREATE: {
+            std::cout << "\tSEND file to server: " << message.getFile().getPathName();
+            openFile(message);
+            break;
+        }
+        default: {
+            std::cout << "\tERROR -> unknown command!" << std::endl;
+            return;
+        }
     }
     try_connect();
     ioService.run();
