@@ -74,9 +74,13 @@ void Client::try_connect() {
                                    else
                                    {
                                        _status = NOT_CONNECTED;
-                                       std::cout << "\tCONNECTION ERROR -> code: " << ec << "\n\terror: " << ec.message()
-                                                 << std::endl;
+                                       retry++;
+                                       std::cout << "\n\tCONNECTION ERROR -> error: " << ec.message() << ", retry #" << retry << std::endl;
                                        socket.close();
+                                       if(retry > 10) {
+                                           std::cout << "\tSERVER NOT ONLINE -> client execution stopped" << std::endl;
+                                           throw std::runtime_error("SERVER NOT ONLINE");
+                                       }
                                        m_timer.expires_from_now(boost::asio::chrono::seconds{2});
                                        m_timer.async_wait(std::bind(&Client::on_ready_to_reconnect, this, std::placeholders::_1));
                                    }
@@ -181,8 +185,7 @@ void Client::doRead() {
                          if (!ec)
                              processRead(bytes);
                          else {
-                             std::cout << ec << std::endl;
-                             std::cout << ec.message() << std::endl;
+                             std::cout << "\tERROR -> error in buffer reading, due to " << ec.message() << std::endl;
                          }
                      });
 }

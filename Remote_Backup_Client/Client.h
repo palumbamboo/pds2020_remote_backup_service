@@ -33,6 +33,8 @@ private:
     std::string m_clientId;
     bool m_response;
 
+    int retry=0;
+
     ConnectionStatus _status = NOT_CONNECTED;
     Message message;
     template<class Buffer>

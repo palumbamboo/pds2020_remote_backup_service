@@ -181,7 +181,7 @@ void scan_directory(const std::string& path_to_watch, UploadQueue& queue, const 
 
 int main(int argc, char* argv[]) {
 
-    std::cout << "============= REMOTE BACKUP CLIENT =============" << "\n\n";
+    std::cout << "\n============= REMOTE BACKUP CLIENT =============" << "\n\n";
 
     std::fstream configFile(CONFIG_PATH);
     std::string address;
@@ -329,8 +329,8 @@ int main(int argc, char* argv[]) {
         tcq.join();
     }
     catch (std::exception& e) {
-        std::cerr << e.what() << std::endl;
-        std::cerr << "Exceptions!" << std::endl;
+        std::cerr << "\n\nSERVICE STOPPED, due to " << e.what() << std::endl;
+        std::cerr << "Please retry later!" << std::endl;
     }
 
     std::cout << "\n\n" << "============= BYE BYE =============" << "\n\n";

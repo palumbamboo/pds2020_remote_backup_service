@@ -48,7 +48,7 @@ void Session::processRead(size_t t_bytesTransferred)
                 executeInfoCommand();
                 break;
             }
-                // END_INFO_PHASE | | clientID
+                // END_INFO_PHASE | | clientID | | force align
             case MessageCommand::END_INFO_PHASE: {
                 executeEndInfoCommand();
                 break;
