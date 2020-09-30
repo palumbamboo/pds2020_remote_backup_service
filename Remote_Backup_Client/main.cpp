@@ -135,7 +135,7 @@ void run_file_watcher(const std::string & path_to_watch, UploadQueue& queue) {
     }
 }
 
-void scan_directory(const std::string& path_to_watch, UploadQueue& queue, const std::string& address, const std::string& port) {
+void scan_directory(const std::string& path_to_watch, UploadQueue& queue, const std::string& address, const std::string& port, const std::string& forceAlignment) {
     for(auto itEntry = std::filesystem::recursive_directory_iterator(path_to_watch);
         itEntry != std::filesystem::recursive_directory_iterator();
         ++itEntry ) {
@@ -160,11 +160,22 @@ void scan_directory(const std::string& path_to_watch, UploadQueue& queue, const 
             std::cout << "??    " << filenameStr << std::endl;
     }
 
-    Message message(MessageCommand::END_INFO_PHASE, globalClientId);
+    Message message(MessageCommand::END_INFO_PHASE, globalClientId, false);
+
+    if(forceAlignment == "true") {
+        message.setForceAlignment(true);
+    }
+
     createClientSend(message, address, port);
     if(clientResponse != 1) {
         std::cout << "\tERROR with client and server folders synchronization" << std::endl;
         exit(1);
+    } else {
+        if(forceAlignment == "true") {
+            std::cout << "-> Client and server file system aligned (filesystem FORCED to match that of the client)\n\n";
+        } else {
+            std::cout << "-> Client and server file system aligned\n\n";
+        }
     }
 }
 
@@ -177,6 +188,7 @@ int main(int argc, char* argv[]) {
     std::string port;
     std::string username;
     std::string folder;
+    std::string forceAlignFs;
 
     std::cout << "1. Service configuration phase..." << std::endl;
     initializeConfigFiles(configFile);
@@ -198,6 +210,9 @@ int main(int argc, char* argv[]) {
                 ("server-port,p",
                  boost::program_options::value<std::string>(&port)->default_value("5200"),
                  "set port of the remote server")
+                ("force-align-fs,f",
+                 boost::program_options::value<std::string>(&forceAlignFs)->default_value("false"),
+                 "set true to enforce server fs alignment with client")
                 ("clear-config", "clear configuration previously saved");
 
         boost::program_options::options_description hidden("Hidden options");
@@ -258,7 +273,7 @@ int main(int argc, char* argv[]) {
 
         configFile.open(CONFIG_PATH, std::ofstream::out | std::ofstream::trunc);
         if (!vm.count("clear-config")) {
-            std::vector<std::string> keys{"username", "server-ip-address", "server-port", "input-dir"};
+            std::vector<std::string> keys{"username", "server-ip-address", "server-port", "input-dir", "force-align-fs"};
             for (const auto& key : keys) {
                 std::string insert;
                 insert.append(key).append("=").append(vm[key].as<std::string>()).append("\n");
@@ -296,8 +311,7 @@ int main(int argc, char* argv[]) {
 
         std::cout << "-> Service configuration done! Welcome back user " << username << ", your clientID is " << globalClientId << "\n\n";
         std::cout << "2. Check current directory status..." << std::endl;
-        scan_directory(folderToWatch, uploadQueue, address, port);
-        std::cout << "-> Client and server file system aligned\n\n";
+        scan_directory(folderToWatch, uploadQueue, address, port, forceAlignFs);
 
         //TODO: control the path, if not exists -> raise exception
         std::thread tfw([&uploadQueue](){

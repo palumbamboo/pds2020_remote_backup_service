@@ -26,6 +26,7 @@ class Message {
     std::string clientId;
     std::string username;
     std::string password;
+    bool forceAlignment;
 public:
     explicit Message(MessageCommand _command,
                      std::string _username,
@@ -36,8 +37,9 @@ public:
                      std::string _clientId) :
             command(_command), fileToUpload(_fileToUpload), clientId(std::move(_clientId)) {}
     explicit Message(MessageCommand _command,
-                     std::string _clientId) :
-            command(_command), clientId(std::move(_clientId)) {}
+                     std::string _clientId,
+                     bool _forceAlignment) :
+            command(_command), clientId(std::move(_clientId)), forceAlignment(_forceAlignment) {}
     ~Message()=default;
     MessageCommand getCommand() { return command; }
     std::string getClientId() { return clientId; }
@@ -59,12 +61,20 @@ public:
         clientId = _clientId;
     }
 
+    void setForceAlignment(bool _forceAlignment) {
+        forceAlignment = _forceAlignment;
+    }
+
     const std::string &getUsername() {
         return username;
     }
 
     const std::string &getPassword() {
         return password;
+    }
+
+    bool getForceAlignment() {
+        return forceAlignment;
     }
 
     void setUsername(const std::string &_username) {

@@ -120,7 +120,7 @@ void Client::sendInfoRequest(Message& t_message) {
 void Client::sendEndInfoRequest(Message& t_message) {
     std::ostream requestStream(&m_request);
 
-    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << "\n\n";
+    requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " " << t_message.getForceAlignment() << "\n\n";
 }
 
 void Client::sendRemoveRequest(Message& t_message)
