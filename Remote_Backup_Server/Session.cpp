@@ -6,6 +6,8 @@
 
 void scan_directory(const std::string& path_to_watch, std::vector<std::string> &_currentFiles);
 
+bool is_number(const std::string& s);
+
 Session::Session(tcp::socket socket) : socket{std::move(socket)} {}
 
 void Session::start() {
@@ -22,19 +24,19 @@ void Session::doRead()
                              processRead(bytes);
                          else {
                              std::cout << "\tERROR -> generic error with socket, connection aborted!" << std::endl;
-                             std::terminate();
+                             return;
                          }
                      });
 }
 
 void Session::processRead(size_t t_bytesTransferred)
 {
-    std::istream requestStream(&m_requestBuf_);
-    readData(requestStream);
-
-    MessageCommand command = m_message.getCommand();
-
     try {
+        std::istream requestStream(&m_requestBuf_);
+        readData(requestStream);
+
+        MessageCommand command = m_message.getCommand();
+
         switch (command) {
             // LOGIN_REQUEST | | username | | hashed password
             case MessageCommand::LOGIN_REQUEST: {
@@ -64,60 +66,70 @@ void Session::processRead(size_t t_bytesTransferred)
             }
             default: {
                 std::cout << "\tERROR -> unknown command!" << std::endl;
-                std::terminate();
+                return;
             }
         }
     } catch (std::exception &e) {
-        std::cout << "\tERROR -> abort command " << parseCommandToString(command) << " execution, due to: " << e.what() << std::endl;
-        std::terminate();
+        std::cout << "\tERROR -> abort command execution, due to: " << e.what() << std::endl;
+        return;
     }
 }
 
 void Session::readData(std::istream &stream) {
-    try {
-        // READ COMMAND TO EXECUTE
-        stream >> m_task;
+    // READ COMMAND TO EXECUTE
+    stream >> m_task;
+    stream.read(m_buf.data(), 1);
+
+    if(m_task.size() != 1 && !is_number(m_task))
+        throw std::runtime_error("invalid command parsing");
+    auto command = parseIntToCommand(stoi(m_task));
+    m_message.setCommand(command);
+
+    if (command == MessageCommand::LOGIN_REQUEST) {
+        stream >> m_username;
         stream.read(m_buf.data(), 1);
+        stream >> m_hashedPassword;
+        if(m_username.empty() || m_hashedPassword.empty())
+            throw std::runtime_error("invalid command parsing");
+        return;
+    }
 
-        auto command = parseIntToCommand(stoi(m_task));
-        m_message.setCommand(command);
+    // READ CLIENT ID IF NOT LOGIN COMMAND
+    stream >> m_clientId;
+    if(m_clientId.empty() || m_clientId.size()!=64 )
+        throw std::runtime_error("invalid command parsing");
+    m_message.setClientId(m_clientId);
+    stream.read(m_buf.data(), 1);
 
-        if (command == MessageCommand::LOGIN_REQUEST) {
-            stream >> m_username;
-            stream.read(m_buf.data(), 1);
-            stream >> m_hashedPassword;
-            return;
-        }
+    if(command == MessageCommand::END_INFO_PHASE) {
+        stream >> m_forceAlignFS;
+        if(m_forceAlignFS.empty() || m_forceAlignFS.size() != 1 || !is_number(m_forceAlignFS))
+            throw std::runtime_error("invalid command parsing");
+        return;
+    }
 
-        // READ CLIENT ID IF NOT LOGIN COMMAND
-        stream >> m_clientId;
-        m_message.setClientId(m_clientId);
-        stream.read(m_buf.data(), 1);
+    stream >> m_fileName;
+    if(m_fileName.empty())
+        throw std::runtime_error("invalid command parsing");
+    stream.read(m_buf.data(), 1);
 
-        if(command == MessageCommand::END_INFO_PHASE) {
-            return;
-        }
+    if (command == MessageCommand::INFO_REQUEST) {
+        stream >> m_fileHash;
+        if(m_fileHash.empty() || m_fileHash.size() != 32)
+            throw std::runtime_error("invalid command parsing");
+        return;
+    }
 
-        stream >> m_fileName;
-        stream.read(m_buf.data(), 1);
+    if (command == MessageCommand::CREATE) {
+        stream >> m_fileSize;
+        if(m_fileSize < 0)
+            throw std::runtime_error("invalid command parsing");
 
-        if (command == MessageCommand::INFO_REQUEST) {
-            stream >> m_fileHash;
-            return;
-        }
-
-        if (command == MessageCommand::CREATE) {
-            stream >> m_fileSize;
-
-            m_fileToUpload.setPath(m_clientId + "/" + std::string(m_fileName));
-            m_message.setFileToUpload(m_fileToUpload);
-            m_fileToUpload.setFileSize(m_fileSize);
-            stream.read(m_buf.data(), 2);
-            return;
-        }
-    } catch (std::exception &e){
-        std::cout << "\tERROR -> in message fields processing, abort" << std::endl;
-        std::terminate();
+        m_fileToUpload.setPath(m_clientId + "/" + std::string(m_fileName));
+        m_message.setFileToUpload(m_fileToUpload);
+        m_fileToUpload.setFileSize(m_fileSize);
+        stream.read(m_buf.data(), 2);
+        return;
     }
 }
 
@@ -145,27 +157,31 @@ void Session::executeLoginCommand() {
         m_response = true;
     }
 
-    doWriteResponse();
-
     if (m_response) {
         createClientFolder();
         std::cout << "\tLOGIN -> user " << m_clientId << std::endl;
     }
+
+    doWriteResponse();
 }
 
 void Session::executeInfoCommand() {
     std::filesystem::path total_filename(m_clientId + "/" + std::string(m_fileName));
     FileToUpload fileToUpload(total_filename);
 
-    std::string hash = fileToUpload.fileHash();
+    if(std::filesystem::exists(total_filename)) {
+        std::string hash = fileToUpload.fileHash();
 
-    if(m_fileHash == hash) {
-        m_response = true;
-        if(findUserInUserFilesMap(m_clientId))
-            addFileToUserFilesMap(m_clientId, total_filename);
-        else {
-            std::vector<std::string> files {total_filename};
-            insertUserFilesMap(m_clientId, files);
+        if(m_fileHash == hash) {
+            m_response = true;
+            if (findUserInUserFilesMap(m_clientId))
+                addFileToUserFilesMap(m_clientId, total_filename);
+            else {
+                std::vector<std::string> files{total_filename};
+                insertUserFilesMap(m_clientId, files);
+            }
+        } else {
+            m_response = false;
         }
     } else
         m_response = false;
@@ -174,49 +190,61 @@ void Session::executeInfoCommand() {
 }
 
 void Session::executeEndInfoCommand() {
-    // Prima controllo che la chiave del client esista e
-    // se non ci sono file nel vettore, posso buttare la cartella corrente
-    if(!findUserInUserFilesMap(m_clientId) || getFilesInUserFilesMap(m_clientId).empty()) {
-        std::filesystem::remove_all(m_clientId);
-        createClientFolder();
-        m_response = true;
-        doWriteResponse();
-        return;
-    }
-
-    // Prendo i file che ho in questo momento
-    std::vector<std::string> currentFiles;
-    scan_directory(m_clientId, currentFiles);
-
-    // Se la currentFiles è vuota significa che non ho niente del client
-    if(currentFiles.empty()) {
-        m_response = true;
-        deleteFromUserFilesMap(m_clientId);
-        doWriteResponse();
-        return;
-    }
-
-    std::vector<std::string> filesToKeep = getFilesInUserFilesMap(m_clientId);
-    std::sort(currentFiles.begin(), currentFiles.end());
-    std::sort(filesToKeep.begin(), filesToKeep.end());
-    std::vector<std::string> differences;
-    std::set_difference(currentFiles.begin(), currentFiles.end(),
-                        filesToKeep.begin(), filesToKeep.end(),
-                        std::back_inserter(differences));
-
     bool errorInDeleting = false;
-    for (auto &file : differences) {
-        if (!std::filesystem::remove(file)) {
-            std::cout << "\tERROR -> deleting file " << file << " during client " << m_clientId << " alignment!" << std::endl;
-            errorInDeleting = true;
+
+    if(stoi(m_forceAlignFS)) {
+        // Prima controllo che la chiave del client esista e
+        // se non ci sono file nel vettore, posso buttare la cartella corrente
+        if (!findUserInUserFilesMap(m_clientId) || getFilesInUserFilesMap(m_clientId).empty()) {
+            std::filesystem::remove_all(m_clientId);
+            createClientFolder();
+            m_response = true;
+            doWriteResponse();
+            return;
+        }
+
+        // Prendo i file che ho in questo momento
+        std::vector<std::string> currentFiles;
+        scan_directory(m_clientId, currentFiles);
+
+        // Se la currentFiles è vuota significa che non ho niente del client
+        if (currentFiles.empty()) {
+            m_response = true;
+            deleteFromUserFilesMap(m_clientId);
+            doWriteResponse();
+            return;
+        }
+
+        std::vector<std::string> filesToKeep = getFilesInUserFilesMap(m_clientId);
+        std::sort(currentFiles.begin(), currentFiles.end());
+        std::sort(filesToKeep.begin(), filesToKeep.end());
+        std::vector<std::string> differences;
+        std::set_difference(currentFiles.begin(), currentFiles.end(),
+                            filesToKeep.begin(), filesToKeep.end(),
+                            std::back_inserter(differences));
+
+        for (auto &file : differences) {
+            if (std::filesystem::is_directory(file) && std::filesystem::is_empty(file)) {
+                if (!std::filesystem::remove_all(file)) {
+                    std::cout << "\tERROR -> deleting folder " << file << " during client " << m_clientId
+                              << " alignment!" << std::endl;
+                    errorInDeleting = true;
+                }
+            } else if (std::filesystem::is_regular_file(file)) {
+                if (!std::filesystem::remove(file)) {
+                    std::cout << "\tERROR -> deleting file " << file << " during client " << m_clientId << " alignment!"
+                              << std::endl;
+                    errorInDeleting = true;
+                }
+            }
         }
     }
 
     // check if some error in deleting files
-    if (errorInDeleting)
-        m_response = false;
-    else
+    if (!errorInDeleting)
         m_response = true;
+    else
+        m_response = false;
 
     deleteFromUserFilesMap(m_clientId);
     doWriteResponse();
@@ -232,7 +260,7 @@ void Session::executeRemoveCommand() {
         if (!std::filesystem::remove(total_filename)) {
             std::cout << "\tERROR -> deleting file " << total_filename << std::endl;
         } else {
-            std::cout << "\tDeleted file: " << total_filename << std::endl;
+            std::cout << "\tDeleted file: " << m_fileName << " from client " << m_clientId << std::endl;
         }
     }
 
@@ -240,7 +268,7 @@ void Session::executeRemoveCommand() {
 
 void Session::executeCreateCommand(std::istream &requestStream) {
     if (createFile() == -1)
-        std::terminate();
+        return;
 
     do {
         requestStream.read(m_buf.data(), m_buf.size());
@@ -248,18 +276,22 @@ void Session::executeCreateCommand(std::istream &requestStream) {
     } while (requestStream.gcount() > 0);
 
     auto self = shared_from_this();
-    socket.async_read_some(boost::asio::buffer(m_buf.data(), m_buf.size()),
-                           [this, self](boost::system::error_code ec, size_t bytes)
-                           {
-                               if (!ec)
-                                   doReadFileContent(bytes);
-                               else {
-                                   if(bytes==0) return;
-                                   std::filesystem::path total_filename;
-                                   total_filename.append(this->m_clientId + "/" + std::string(this->m_fileName));
-                                   std::cout << "\tERROR -> error reading from socket file " << total_filename << ". Buffer error: " << ec.message() << std::endl;
-                               }
-                           });
+    if(m_fileSize > 0) {
+        socket.async_read_some(boost::asio::buffer(m_buf.data(), m_buf.size()),
+                               [this, self](boost::system::error_code ec, size_t bytes) {
+                                   if (!ec) {
+                                       doReadFileContent(bytes);
+                                   } else {
+                                       if (bytes == 0) return;
+                                       std::filesystem::path total_filename;
+                                       total_filename.append(this->m_clientId + "/" + std::string(this->m_fileName));
+                                       std::cout << "\tERROR -> error reading from socket file " << total_filename
+                                                 << ". Buffer error: " << ec.message() << std::endl;
+                                   }
+                               });
+    } else if(m_fileSize == 0) {
+        std::cout << "\tReceived empty file: " << m_fileName << " from client " << m_clientId << std::endl;
+    }
 }
 
 void Session::doWriteResponse() {
@@ -303,8 +335,7 @@ int Session::createFile() {
     return 0;
 }
 
-void Session::doReadFileContent(size_t t_bytesTransferred)
-{
+void Session::doReadFileContent(size_t t_bytesTransferred) {
     if (t_bytesTransferred > 0) {
         m_outputFile.write(m_buf.data(), static_cast<std::streamsize>(t_bytesTransferred));
 
@@ -333,7 +364,7 @@ void scan_directory(const std::string& path_to_watch, std::vector<std::string> &
         itEntry != std::filesystem::recursive_directory_iterator();
         ++itEntry ) {
         const auto filenameStr = itEntry->path().string();
-        if (itEntry->is_regular_file()) {
+        if (itEntry->is_regular_file() || itEntry->is_directory()) {
             _currentFiles.push_back(filenameStr);
         }
     }
@@ -350,4 +381,9 @@ std::string Session::randomString(size_t length) {
         random_string += charset[distribution(generator)];
 
     return random_string;
+}
+
+bool is_number(const std::string& s) {
+    return !s.empty() && std::find_if(s.begin(),
+                                      s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
 }

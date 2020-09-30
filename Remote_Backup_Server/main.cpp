@@ -10,7 +10,7 @@
 #define VERSION     "0.1"
 #define CONFIG_PATH "remote_server.cfg"
 
-boost::asio::io_service ioService;
+std::shared_ptr<boost::asio::io_service> ioServicePointer;
 
 void load_users_password();
 void initializeConfigFiles(std::fstream &configFile, std::fstream &passFile);
@@ -18,7 +18,7 @@ void initializeConfigFiles(std::fstream &configFile, std::fstream &passFile);
 void signal_callback_handler(int signum) {
     std::cout << "\n\n3. SHUTDOWN in progress..." << std::endl;
 
-    ioService.stop();
+    ioServicePointer->stop();
     std::cout << "\tSERVER -> closed" << std::endl;
 
     std::cout << "-> Shutdown complete, byebye!" << std::endl;
@@ -112,11 +112,12 @@ int main(int argc, char* argv[]) {
     signal(SIGINT, signal_callback_handler);
 
     try {
-        Server server(ioService, port);
+        ioServicePointer = std::make_shared<boost::asio::io_service>();
+        Server server(*ioServicePointer, port);
 
         std::cout << "2. Server in listen mode..." << std::endl;
 
-        ioService.run();
+        ioServicePointer->run();
     }
 
     catch(std::exception& e) {

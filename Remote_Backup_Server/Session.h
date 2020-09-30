@@ -34,6 +34,7 @@ private:
     bool m_response;
     std::string m_username;
     std::string m_hashedPassword;
+    std::string m_forceAlignFS;
 
     template<class Buffer>
     void writeBuffer(Buffer& t_buffer);
@@ -43,10 +44,6 @@ private:
     void executeEndInfoCommand();
     void executeRemoveCommand();
     void executeCreateCommand(std::istream &requestStream);
-
-public:
-    explicit Session(tcp::socket socket);
-    void start();
     void doRead();
     void processRead(size_t t_bytesTransferred);
     void readData(std::istream &stream);
@@ -54,6 +51,10 @@ public:
     void doReadFileContent(size_t t_bytesTransferred);
     void doWriteResponse();
     void createClientFolder() const;
+
+public:
+    explicit Session(tcp::socket socket);
+    void start();
 
 };
 
