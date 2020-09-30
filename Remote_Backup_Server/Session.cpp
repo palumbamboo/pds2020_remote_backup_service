@@ -251,24 +251,30 @@ void Session::executeEndInfoCommand() {
 }
 
 void Session::executeRemoveCommand() {
+    m_response = true;
     std::filesystem::path total_filename(m_clientId + "/" + std::string(m_fileName));
     if(std::filesystem::is_directory(total_filename)) {
         if (!std::filesystem::remove_all(total_filename)) {
             std::cout << "\tERROR -> deleting dir " << total_filename << std::endl;
+            m_response = false;
         }
     } else if(std::filesystem::is_regular_file(total_filename)) {
         if (!std::filesystem::remove(total_filename)) {
             std::cout << "\tERROR -> deleting file " << total_filename << std::endl;
+            m_response = false;
         } else {
             std::cout << "\tDeleted file: " << m_fileName << " from client " << m_clientId << std::endl;
         }
     }
 
+    doWriteResponse();
 }
 
 void Session::executeCreateCommand(std::istream &requestStream) {
-    if (createFile() == -1)
+    if (createFile() == -1) {
+        m_response = false;
         return;
+    }
 
     do {
         requestStream.read(m_buf.data(), m_buf.size());
@@ -287,16 +293,32 @@ void Session::executeCreateCommand(std::istream &requestStream) {
                                        total_filename.append(this->m_clientId + "/" + std::string(this->m_fileName));
                                        std::cout << "\tERROR -> error reading from socket file " << total_filename
                                                  << ". Buffer error: " << ec.message() << std::endl;
+                                       m_response = false;
                                    }
                                });
     } else if(m_fileSize == 0) {
         std::cout << "\tReceived empty file: " << m_fileName << " from client " << m_clientId << std::endl;
+        m_response = true;
     }
+
+    doWriteResponse();
 }
 
 void Session::doWriteResponse() {
+    std::ostream requestStream(&m_requestBuf_);
+
+    if(m_message.getCommand() == MessageCommand::CREATE) {
+        m_message.setCommand(MessageCommand::CREATE_RESPONSE);
+
+        requestStream << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
+    }
+
+    if(m_message.getCommand() == MessageCommand::REMOVE) {
+        m_message.setCommand(MessageCommand::REMOVE_RESPONSE);
+
+        requestStream << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
+    }
     if(m_message.getCommand() == MessageCommand::LOGIN_REQUEST) {
-        std::ostream requestStream(&m_requestBuf_);
         m_message.setCommand(MessageCommand::LOGIN_RESPONSE);
 
         if(m_response) {
@@ -304,24 +326,21 @@ void Session::doWriteResponse() {
         } else {
             requestStream << static_cast<int>(m_message.getCommand()) << " " << m_response << "\n\n";
         }
-        writeBuffer(m_requestBuf_);
     }
 
     if(m_message.getCommand() == MessageCommand::INFO_REQUEST) {
-        std::ostream requestStream(&m_requestBuf_);
         m_message.setCommand(MessageCommand::INFO_RESPONSE);
 
         requestStream << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
-        writeBuffer(m_requestBuf_);
     }
 
     if(m_message.getCommand() == MessageCommand::END_INFO_PHASE) {
-        std::ostream requestStream(&m_requestBuf_);
         m_message.setCommand(MessageCommand::END_INFO_PHASE);
 
         requestStream << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
-        writeBuffer(m_requestBuf_);
     }
+
+    writeBuffer(m_requestBuf_);
 }
 
 int Session::createFile() {
@@ -341,6 +360,7 @@ void Session::doReadFileContent(size_t t_bytesTransferred) {
 
         if (m_outputFile.tellp() >= static_cast<std::streamsize>(m_fileSize)) {
             std::cout << "\tReceived file: " << m_fileName << " from client " << m_clientId << std::endl;
+            m_response = true;
             return;
         }
     }
@@ -352,6 +372,7 @@ void Session::doReadFileContent(size_t t_bytesTransferred) {
                            });
 }
 
+// TODO - should raise exception? Could fail and we have to send m_response = false
 void Session::createClientFolder() const {
     if (!std::filesystem::exists(m_clientId)) {
         if (!std::filesystem::create_directories(m_clientId))

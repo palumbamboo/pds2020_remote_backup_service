@@ -80,12 +80,43 @@ void createClientSend(Message& message, const std::string& address, const std::s
     Client client(address, port, message);
     backupClient.set_currentClient(client);
     client.start();
-    if (message.getCommand() == MessageCommand::INFO_REQUEST || message.getCommand() == MessageCommand::END_INFO_PHASE) {
-        clientResponse = client.getResponse();
-    } else if (message.getCommand() == MessageCommand::LOGIN_REQUEST) {
-        clientResponse = client.getResponse();
-        globalClientId = client.getClientId();
+
+    MessageCommand command = message.getCommand();
+
+    switch (command) {
+        // LOGIN_REQUEST | | username | | hashed password
+        case MessageCommand::LOGIN_REQUEST: {
+            clientResponse = client.getResponse();
+            globalClientId = client.getClientId();
+            break;
+        }
+            // INFO_REQUEST | | clientID | | path | | hashed file
+        case MessageCommand::INFO_REQUEST: {
+            clientResponse = client.getResponse();
+            break;
+        }
+            // END_INFO_PHASE | | clientID
+        case MessageCommand::END_INFO_PHASE: {
+            clientResponse = client.getResponse();
+            break;
+        }
+            // REMOVE | | clientID | | path
+        case MessageCommand::REMOVE: {
+            clientResponse = client.getResponse();
+            break;
+        }
+            // CREATE | | clientID | | path | | file size
+            // file data inside request body
+        case MessageCommand::CREATE: {
+            clientResponse = client.getResponse();
+            break;
+        }
+        default: {
+            std::cout << "\tERROR -> unknown command!" << std::endl;
+            return;
+        }
     }
+
     backupClient.delete_currentClient();
 }
 

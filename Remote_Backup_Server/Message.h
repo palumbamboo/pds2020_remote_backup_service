@@ -11,13 +11,15 @@
 #include "FileToUpload.h"
 
 enum class MessageCommand {
-    CREATE = 0,
-    REMOVE = 1,
-    INFO_REQUEST = 2,
-    INFO_RESPONSE = 3,
-    END_INFO_PHASE = 4,
-    LOGIN_REQUEST = 5,
-    LOGIN_RESPONSE = 6,
+    CREATE          = 0,
+    CREATE_RESPONSE = 1,
+    REMOVE          = 2,
+    REMOVE_RESPONSE = 3,
+    INFO_REQUEST    = 4,
+    INFO_RESPONSE   = 5,
+    END_INFO_PHASE  = 6,
+    LOGIN_REQUEST   = 7,
+    LOGIN_RESPONSE  = 8,
 };
 
 MessageCommand parseIntToCommand(int _command);

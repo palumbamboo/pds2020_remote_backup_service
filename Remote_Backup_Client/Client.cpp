@@ -5,6 +5,8 @@
 #include <filesystem>
 #include "Client.h"
 
+bool is_number(const std::string& s);
+
 Client::Client(const std::string &address, const std::string &port, Message & _message) :
         resolver{ioService},
         socket{ioService},
@@ -159,14 +161,24 @@ void Client::sendRemoveRequest(Message& t_message)
 
 void Client::processRead(size_t t_bytesTransferred) {
     std::istream requestStream(&m_request);
+    // READ COMMAND TO EXECUTE
     requestStream >> m_task;
+    if(m_task.size() != 1 && !is_number(m_task))
+        throw std::runtime_error("invalid command parsing");
     requestStream.read(m_buf.data(), 1);
 
-    auto command = static_cast<MessageCommand>(stoi(m_task));
-    if (command == MessageCommand::INFO_RESPONSE || command == MessageCommand::END_INFO_PHASE) {
+    auto command = parseIntToCommand(stoi(m_task));
+
+    if (command == MessageCommand::INFO_RESPONSE    ||
+        command == MessageCommand::END_INFO_PHASE   ||
+        command == MessageCommand::CREATE_RESPONSE  ||
+        command == MessageCommand::REMOVE_RESPONSE) {
         requestStream >> m_clientId;
+        if (m_clientId.empty() || m_clientId.size()!=64 )
+            throw std::runtime_error("invalid command parsing");
         requestStream.read(m_buf.data(), 1);
         requestStream >> m_response;
+        // TODO - check if response is good
     }
 
     if (command == MessageCommand::LOGIN_RESPONSE) {
@@ -185,7 +197,8 @@ void Client::doRead() {
                          if (!ec)
                              processRead(bytes);
                          else {
-                             std::cout << "\tERROR -> error in buffer reading, due to " << ec.message() << std::endl;
+                             std::cout << "\tERROR -> generic error with socket, connection aborted!" << std::endl;
+                             return;
                          }
                      });
 }
@@ -196,4 +209,9 @@ void Client::on_ready_to_reconnect(const boost::system::error_code &error) {
 
 std::string Client::getClientId() {
     return m_clientId;
+}
+
+bool is_number(const std::string& s) {
+    return !s.empty() && std::find_if(s.begin(),
+                                      s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
 }
