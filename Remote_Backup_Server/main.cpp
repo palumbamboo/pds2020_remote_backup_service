@@ -3,7 +3,6 @@
 #include <boost/program_options.hpp>
 #include <map>
 #include <vector>
-#include <nlohmann/json.hpp>
 
 #include "Server.h"
 #include "UserMap.h"
@@ -11,9 +10,20 @@
 #define VERSION     "0.1"
 #define CONFIG_PATH "remote_server.cfg"
 
+boost::asio::io_service ioService;
 
 void load_users_password();
 void initializeConfigFiles(std::fstream &configFile, std::fstream &passFile);
+
+void signal_callback_handler(int signum) {
+    std::cout << "\n\n3. SHUTDOWN in progress..." << std::endl;
+
+    ioService.stop();
+    std::cout << "\tSERVER -> closed" << std::endl;
+
+    std::cout << "-> Shutdown complete, byebye!" << std::endl;
+    exit(signum);
+}
 
 int main(int argc, char* argv[]) {
     std::cout << "============= REMOTE BACKUP SERVER =============" << "\n\n";
@@ -95,13 +105,13 @@ int main(int argc, char* argv[]) {
         configFile.close();
 
     } catch (std::exception &e) {
-        std::cout << "Exception during configuration: " << e.what() << std::endl;
+        std::cout << "-> ERROR: exception during configuration due to " << e.what() << std::endl;
         exit(1);
     }
 
+    signal(SIGINT, signal_callback_handler);
 
     try {
-        boost::asio::io_service ioService;
         Server server(ioService, port);
 
         std::cout << "2. Server in listen mode..." << std::endl;
@@ -121,11 +131,7 @@ void load_users_password() {
     getline(passFile, fl);
     if(!fl.empty()) {
         passFile.close();
-        std::ifstream passFile2(PASS_PATH);
-        nlohmann::json jsonMap;
-        passFile2 >> jsonMap;
-        userMap = jsonMap.get<std::map<std::string, std::vector<std::string>>>();
-        passFile2.close();
+        loadUserLoginMap();
     } else {
         passFile.close();
     }

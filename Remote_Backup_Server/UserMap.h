@@ -23,6 +23,7 @@ void insertUserLogin(const std::string &userName, std::vector<std::string> &user
 bool findUserInUserLoginMap(const std::string &userName);
 std::vector<std::string> getUserInUserLoginMap(const std::string &userName);
 void saveUserLoginMapToFile();
+void loadUserLoginMap();
 
 void insertUserFilesMap(const std::string &clientID, std::vector<std::string> &filesVector);
 bool findUserInUserFilesMap(const std::string &clientID);

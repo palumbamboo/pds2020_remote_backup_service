@@ -63,12 +63,12 @@ void Session::processRead(size_t t_bytesTransferred)
                 break;
             }
             default: {
-                std::cout << "\tERROR: unknown command!" << std::endl;
+                std::cout << "\tERROR -> unknown command!" << std::endl;
                 std::terminate();
             }
         }
     } catch (std::exception &e) {
-        std::cout << "\tERROR in command " << parseCommandToString(command) << " execution, due to: " << e.what() << std::endl;
+        std::cout << "\tERROR -> abort command " << parseCommandToString(command) << " execution, due to: " << e.what() << std::endl;
         std::terminate();
     }
 }
@@ -112,6 +112,7 @@ void Session::readData(std::istream &stream) {
             m_fileToUpload.setPath(m_clientId + "/" + std::string(m_fileName));
             m_message.setFileToUpload(m_fileToUpload);
             m_fileToUpload.setFileSize(m_fileSize);
+            stream.read(m_buf.data(), 2);
             return;
         }
     } catch (std::exception &e){
@@ -148,7 +149,7 @@ void Session::executeLoginCommand() {
 
     if (m_response) {
         createClientFolder();
-        std::cout << "User correctly logged!" << std::endl;
+        std::cout << "\tLOGIN -> user " << m_clientId << std::endl;
     }
 }
 
@@ -156,23 +157,18 @@ void Session::executeInfoCommand() {
     std::filesystem::path total_filename(m_clientId + "/" + std::string(m_fileName));
     FileToUpload fileToUpload(total_filename);
 
-    try {
-        std::string hash = fileToUpload.fileHash();
+    std::string hash = fileToUpload.fileHash();
 
-        if(m_fileHash == hash) {
-            m_response = true;
-            if(findUserInUserFilesMap(m_clientId))
-                addFileToUserFilesMap(m_clientId, total_filename);
-            else {
-                std::vector<std::string> files {total_filename};
-                insertUserFilesMap(m_clientId, files);
-            }
-        } else
-            m_response = false;
-    } catch (std::exception &e) {
-        std::cout << e.what() << std::endl;
+    if(m_fileHash == hash) {
+        m_response = true;
+        if(findUserInUserFilesMap(m_clientId))
+            addFileToUserFilesMap(m_clientId, total_filename);
+        else {
+            std::vector<std::string> files {total_filename};
+            insertUserFilesMap(m_clientId, files);
+        }
+    } else
         m_response = false;
-    }
 
     doWriteResponse();
 }
@@ -230,11 +226,13 @@ void Session::executeRemoveCommand() {
     std::filesystem::path total_filename(m_clientId + "/" + std::string(m_fileName));
     if(std::filesystem::is_directory(total_filename)) {
         if (!std::filesystem::remove_all(total_filename)) {
-            std::cout << "\tERROR deleting dir " << total_filename << std::endl;
+            std::cout << "\tERROR -> deleting dir " << total_filename << std::endl;
         }
     } else if(std::filesystem::is_regular_file(total_filename)) {
         if (!std::filesystem::remove(total_filename)) {
-            std::cout << "\tERROR deleting file " << total_filename << std::endl;
+            std::cout << "\tERROR -> deleting file " << total_filename << std::endl;
+        } else {
+            std::cout << "\tDeleted file: " << total_filename << std::endl;
         }
     }
 
@@ -242,7 +240,7 @@ void Session::executeRemoveCommand() {
 
 void Session::executeCreateCommand(std::istream &requestStream) {
     if (createFile() == -1)
-        return;
+        std::terminate();
 
     do {
         requestStream.read(m_buf.data(), m_buf.size());
@@ -289,23 +287,17 @@ void Session::doWriteResponse() {
         std::ostream requestStream(&m_requestBuf_);
         m_message.setCommand(MessageCommand::END_INFO_PHASE);
 
-        std::cout << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
         requestStream << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
         writeBuffer(m_requestBuf_);
     }
 }
 
-// TODO - RIFATTORIZZARE
-int Session::createFile()
-{
-    std::filesystem::path total_filename;
-    total_filename.append(m_clientId + "/" + std::string(m_fileName));
-    std::filesystem::path root_name = total_filename;
-    std::filesystem::create_directories(root_name.remove_filename());
+int Session::createFile() {
+    std::filesystem::path total_filename(m_clientId + "/" + std::string(m_fileName));
+    std::filesystem::create_directories(total_filename.parent_path());
     m_outputFile.open(total_filename, std::ios_base::binary);
     if (!m_outputFile) {
-        std::cout <<  "\tERROR -> Failed to create path " << total_filename << std::endl;
-        std::flush(std::cout);
+        std::cout <<  "\tERROR -> Failed to create path to " << total_filename << std::endl;
         return -1;
     }
     return 0;
@@ -331,10 +323,8 @@ void Session::doReadFileContent(size_t t_bytesTransferred)
 
 void Session::createClientFolder() const {
     if (!std::filesystem::exists(m_clientId)) {
-        if (std::filesystem::create_directories(m_clientId))
-            std::cout << "directory: " << m_clientId << " correctly created!" << std::endl;
-    } else {
-        std::cout << "directory: " << m_clientId << " already exists!" << std::endl;
+        if (!std::filesystem::create_directories(m_clientId))
+            std::cout << "\tERROR -> can't create directory for client " << m_clientId << std::endl;
     }
 }
 
@@ -361,7 +351,3 @@ std::string Session::randomString(size_t length) {
 
     return random_string;
 }
-
-
-
-

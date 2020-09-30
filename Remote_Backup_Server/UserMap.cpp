@@ -33,6 +33,15 @@ void saveUserLoginMapToFile() {
     o << std::setw(4) << jsonMap << std::endl;
 }
 
+void loadUserLoginMap() {
+    std::lock_guard<std::mutex> lockGuard(mutexUserMap);
+    std::ifstream passFile(PASS_PATH);
+    nlohmann::json jsonMap;
+    passFile >> jsonMap;
+    userMap = jsonMap.get<std::map<std::string, std::vector<std::string>>>();
+    passFile.close();
+}
+
 
 void insertUserFilesMap(const std::string &clientID, std::vector<std::string> &filesVector) {
     std::lock_guard<std::mutex> lockGuard(mutexUserFilesMap);

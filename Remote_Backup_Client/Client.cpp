@@ -98,7 +98,8 @@ void Client::doWriteFile(const boost::system::error_code& t_ec)
             writeBuffer(buf);
         }
     } else {
-        std::cout << "Error: " << t_ec.message();
+        std::cout << "\tERROR -> with server connection: " << t_ec.message();
+        exit(1);
     }
 }
 
