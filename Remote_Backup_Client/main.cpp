@@ -313,7 +313,6 @@ int main(int argc, char* argv[]) {
         std::cout << "2. Check current directory status..." << std::endl;
         scan_directory(folderToWatch, uploadQueue, address, port, forceAlignFs);
 
-        //TODO: control the path, if not exists -> raise exception
         std::thread tfw([&uploadQueue](){
             run_file_watcher(folderToWatch, uploadQueue);
         });
