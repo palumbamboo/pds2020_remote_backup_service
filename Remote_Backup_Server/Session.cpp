@@ -294,11 +294,13 @@ void Session::executeCreateCommand(std::istream &requestStream) {
                                        std::cout << "\tERROR -> error reading from socket file " << total_filename
                                                  << ". Buffer error: " << ec.message() << std::endl;
                                        m_response = false;
+                                       deleteFile();
                                    }
                                });
     } else if(m_fileSize == 0) {
         std::cout << "\tReceived empty file: " << m_fileName << " from client " << m_clientId << std::endl;
         m_response = true;
+        doWriteResponse();
     }
 }
 
@@ -306,16 +308,10 @@ void Session::doWriteResponse() {
     std::ostream requestStream(&m_requestBuf_);
 
     if(m_message.getCommand() == MessageCommand::CREATE) {
-        m_message.setCommand(MessageCommand::CREATE_RESPONSE);
-
-        std::cout << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
         requestStream << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
     }
 
     if(m_message.getCommand() == MessageCommand::REMOVE) {
-        m_message.setCommand(MessageCommand::REMOVE_RESPONSE);
-
-        std::cout << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
         requestStream << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
     }
 
@@ -354,6 +350,13 @@ int Session::createFile() {
     }
     return 0;
 }
+
+void Session::deleteFile() {
+    std::filesystem::path total_filename(m_clientId + "/" + std::string(m_fileName));
+    if(std::filesystem::exists(total_filename)) {
+        std::filesystem::remove(total_filename);
+    }
+};
 
 void Session::doReadFileContent(size_t t_bytesTransferred) {
     if (t_bytesTransferred > 0) {

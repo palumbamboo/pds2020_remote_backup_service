@@ -48,6 +48,7 @@ private:
     void processRead(size_t t_bytesTransferred);
     void readData(std::istream &stream);
     int createFile();
+    void deleteFile();
     void doReadFileContent(size_t t_bytesTransferred);
     void doWriteResponse();
     void createClientFolder() const;

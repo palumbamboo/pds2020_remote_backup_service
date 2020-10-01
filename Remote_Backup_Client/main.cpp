@@ -354,12 +354,13 @@ int main(int argc, char* argv[]) {
             while(!shutdownComplete) {
                 Message message = uploadQueue.popMessage();
                 createClientSend(message, address, port);
-                std::cout << serverResponse << std::endl;
                 if(serverResponse != 1) {
                     if(message.getCommand() == MessageCommand::CREATE || message.getCommand() == MessageCommand::REMOVE) {
-                        // if error, re-push in queue the message
+                        std::cout << " -> ERROR server side: retry command" << std::endl;
                         uploadQueue.pushMessage(message);
                     }
+                } else {
+                    std::cout << " -> DONE" << std::endl;
                 }
             }
         });

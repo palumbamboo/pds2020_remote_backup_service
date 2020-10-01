@@ -10,7 +10,8 @@ bool is_number(const std::string& s);
 Client::Client(const std::string &address, const std::string &port, Message & _message) :
         resolver{ioService},
         socket{ioService},
-        message{_message}{
+        message{_message},
+        times(0) {
     endpointIterator = resolver.resolve(address, port);
 }
 
@@ -42,6 +43,7 @@ void Client::start() {
         }
             // REMOVE | | clientID | | path
         case MessageCommand::REMOVE: {
+            m_command = MessageCommand::REMOVE;
             std::cout << "\tREMOVE file from server: " << message.getFile().getPathName();
             sendRemoveRequest(message);
             break;
@@ -49,6 +51,7 @@ void Client::start() {
             // CREATE | | clientID | | path | | file size
             // file data inside request body
         case MessageCommand::CREATE: {
+            m_command = MessageCommand::CREATE;
             std::cout << "\tSEND file to server: " << message.getFile().getPathName();
             openFile(message);
             break;
@@ -70,8 +73,6 @@ void Client::try_connect() {
                                    {
                                        _status = CONNECTED;
                                        writeBuffer(m_request);
-                                       if(this->message.getCommand() == MessageCommand::CREATE || this->message.getCommand() == MessageCommand::REMOVE)
-                                           std::cout << " -> DONE" << std::endl;
                                    }
                                    else
                                    {
@@ -109,13 +110,14 @@ void Client::openFile(Message& t_message)
 void Client::doWriteFile(const boost::system::error_code& t_ec)
 {
     if (!t_ec) {
-        if (m_command == MessageCommand::INFO_REQUEST   ||
-            m_command == MessageCommand::LOGIN_REQUEST  ||
-            m_command == MessageCommand::END_INFO_PHASE) {
-            doRead();
-            return;
-        }
-        if (m_sourceFile) {
+//        if (m_command == MessageCommand::INFO_REQUEST   ||
+//            m_command == MessageCommand::LOGIN_REQUEST  ||
+//            m_command == MessageCommand::END_INFO_PHASE ||
+//            m_command == MessageCommand::REMOVE) {
+//            doRead();
+//            return;
+//        }
+        if (m_sourceFile && m_command == MessageCommand::CREATE) {
             m_sourceFile.read(m_buf.data(), m_buf.size());
             if (m_sourceFile.fail() && !m_sourceFile.eof()) {
                 auto msg = "Failed while reading file";
@@ -124,6 +126,7 @@ void Client::doWriteFile(const boost::system::error_code& t_ec)
             }
             auto buf = boost::asio::buffer(m_buf.data(), static_cast<size_t>(m_sourceFile.gcount()));
             writeBuffer(buf);
+            return;
         }
 
         doRead();
@@ -172,10 +175,10 @@ void Client::processRead(size_t t_bytesTransferred) {
 
     if (command == MessageCommand::INFO_RESPONSE    ||
         command == MessageCommand::END_INFO_PHASE   ||
-        command == MessageCommand::CREATE_RESPONSE  ||
-        command == MessageCommand::REMOVE_RESPONSE) {
+        command == MessageCommand::CREATE  ||
+        command == MessageCommand::REMOVE) {
         requestStream >> m_clientId;
-        if (m_clientId.empty() || m_clientId.size()!=64 )
+        if (m_clientId.empty() || m_clientId.size()!=64)
             throw std::runtime_error("invalid command parsing");
         requestStream.read(m_buf.data(), 1);
         requestStream >> m_response;
