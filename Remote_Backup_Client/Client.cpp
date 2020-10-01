@@ -109,8 +109,8 @@ void Client::openFile(Message& t_message)
 void Client::doWriteFile(const boost::system::error_code& t_ec)
 {
     if (!t_ec) {
-        if (m_command == MessageCommand::INFO_REQUEST ||
-            m_command == MessageCommand::LOGIN_REQUEST ||
+        if (m_command == MessageCommand::INFO_REQUEST   ||
+            m_command == MessageCommand::LOGIN_REQUEST  ||
             m_command == MessageCommand::END_INFO_PHASE) {
             doRead();
             return;
@@ -125,6 +125,8 @@ void Client::doWriteFile(const boost::system::error_code& t_ec)
             auto buf = boost::asio::buffer(m_buf.data(), static_cast<size_t>(m_sourceFile.gcount()));
             writeBuffer(buf);
         }
+
+        doRead();
     } else {
         std::cout << "\tERROR -> with server connection: " << t_ec.message();
         exit(1);
@@ -151,8 +153,7 @@ void Client::sendEndInfoRequest(Message& t_message) {
     requestStream << static_cast<int>(t_message.getCommand()) << " " << t_message.getClientId() << " " << t_message.getForceAlignment() << "\n\n";
 }
 
-void Client::sendRemoveRequest(Message& t_message)
-{
+void Client::sendRemoveRequest(Message& t_message) {
     std::string t_path = t_message.getFile().getPathToUpload();
     std::ostream requestStream(&m_request);
 

@@ -16,7 +16,7 @@
 std::string globalClientId;
 std::string folderToWatch;
 bool shutdownComplete = false;
-bool clientResponse;
+bool serverResponse;
 BackupClient backupClient;
 
 void initializeConfigFiles(std::fstream &configFile);
@@ -86,29 +86,29 @@ void createClientSend(Message& message, const std::string& address, const std::s
     switch (command) {
         // LOGIN_REQUEST | | username | | hashed password
         case MessageCommand::LOGIN_REQUEST: {
-            clientResponse = client.getResponse();
+            serverResponse = client.getResponse();
             globalClientId = client.getClientId();
             break;
         }
             // INFO_REQUEST | | clientID | | path | | hashed file
         case MessageCommand::INFO_REQUEST: {
-            clientResponse = client.getResponse();
+            serverResponse = client.getResponse();
             break;
         }
             // END_INFO_PHASE | | clientID
         case MessageCommand::END_INFO_PHASE: {
-            clientResponse = client.getResponse();
+            serverResponse = client.getResponse();
             break;
         }
             // REMOVE | | clientID | | path
         case MessageCommand::REMOVE: {
-            clientResponse = client.getResponse();
+            serverResponse = client.getResponse();
             break;
         }
             // CREATE | | clientID | | path | | file size
             // file data inside request body
         case MessageCommand::CREATE: {
-            clientResponse = client.getResponse();
+            serverResponse = client.getResponse();
             break;
         }
         default: {
@@ -160,6 +160,7 @@ void run_file_watcher(const std::string & path_to_watch, UploadQueue& queue) {
             }
         });
     }
+    // TODO - change print
     catch (std::exception &e) {
         std::cout << "Exception!" << std::endl;
         std::cout << e.what() << std::endl;
@@ -178,7 +179,7 @@ void scan_directory(const std::string& path_to_watch, UploadQueue& queue, const 
             Message message(MessageCommand::INFO_REQUEST, fileToUpload, globalClientId);
 
             createClientSend(message, address, port);
-            if(clientResponse == 0) {
+            if(serverResponse == 0) {
                 message.setCommand(MessageCommand::CREATE);
                 std::cout << "\tFILE: " << filenameStr << " not present on server -> enqueue to send to server" << std::endl;
                 queue.pushMessage(message);
@@ -198,7 +199,7 @@ void scan_directory(const std::string& path_to_watch, UploadQueue& queue, const 
     }
 
     createClientSend(message, address, port);
-    if(clientResponse != 1) {
+    if(serverResponse != 1) {
         std::cout << "\tERROR with client and server folders synchronization" << std::endl;
         exit(1);
     } else {
@@ -330,7 +331,7 @@ int main(int argc, char* argv[]) {
 
     try {
         int timesLogin = 0;
-        while(timesLogin < 3 && !clientResponse) {
+        while(timesLogin < 3 && !serverResponse) {
             performLogin(timesLogin, username, address, port);
             timesLogin++;
         }
@@ -349,9 +350,17 @@ int main(int argc, char* argv[]) {
         });
 
         std::thread tcq([&uploadQueue, &address, &port](){
+            // TODO - variable shutdowncomplete?
             while(!shutdownComplete) {
                 Message message = uploadQueue.popMessage();
                 createClientSend(message, address, port);
+                std::cout << serverResponse << std::endl;
+                if(serverResponse != 1) {
+                    if(message.getCommand() == MessageCommand::CREATE || message.getCommand() == MessageCommand::REMOVE) {
+                        // if error, re-push in queue the message
+                        uploadQueue.pushMessage(message);
+                    }
+                }
             }
         });
 

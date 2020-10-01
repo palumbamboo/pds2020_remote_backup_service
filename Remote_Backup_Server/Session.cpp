@@ -300,8 +300,6 @@ void Session::executeCreateCommand(std::istream &requestStream) {
         std::cout << "\tReceived empty file: " << m_fileName << " from client " << m_clientId << std::endl;
         m_response = true;
     }
-
-    doWriteResponse();
 }
 
 void Session::doWriteResponse() {
@@ -310,14 +308,17 @@ void Session::doWriteResponse() {
     if(m_message.getCommand() == MessageCommand::CREATE) {
         m_message.setCommand(MessageCommand::CREATE_RESPONSE);
 
+        std::cout << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
         requestStream << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
     }
 
     if(m_message.getCommand() == MessageCommand::REMOVE) {
         m_message.setCommand(MessageCommand::REMOVE_RESPONSE);
 
+        std::cout << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
         requestStream << static_cast<int>(m_message.getCommand()) << " " << m_message.getClientId() << " " << m_response << "\n\n";
     }
+
     if(m_message.getCommand() == MessageCommand::LOGIN_REQUEST) {
         m_message.setCommand(MessageCommand::LOGIN_RESPONSE);
 
@@ -361,6 +362,7 @@ void Session::doReadFileContent(size_t t_bytesTransferred) {
         if (m_outputFile.tellp() >= static_cast<std::streamsize>(m_fileSize)) {
             std::cout << "\tReceived file: " << m_fileName << " from client " << m_clientId << std::endl;
             m_response = true;
+            doWriteResponse();
             return;
         }
     }
