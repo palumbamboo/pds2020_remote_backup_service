@@ -7,7 +7,7 @@
 #include "Server.h"
 #include "UserMap.h"
 
-#define VERSION     "0.1"
+#define VERSION     "1.0"
 #define CONFIG_PATH "remote_server.cfg"
 
 std::shared_ptr<boost::asio::io_service> ioServicePointer;

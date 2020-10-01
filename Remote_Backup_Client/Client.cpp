@@ -123,8 +123,9 @@ void Client::doWriteFile(const boost::system::error_code& t_ec)
 
         doRead();
     } else {
-        std::cout << "\n\tERROR -> with server connection: " << t_ec.message() << "\nFORCE CLOSE, retry later" << std::endl;
-        exit(1);
+        std::cout << "\n\tERROR -> with server connection: " << t_ec.message() << std::endl;
+        m_response = false;
+        return;
     }
 }
 
@@ -170,11 +171,10 @@ void Client::processRead(size_t t_bytesTransferred) {
         command == MessageCommand::CREATE  ||
         command == MessageCommand::REMOVE) {
         requestStream >> m_clientId;
-        if (m_clientId.empty() || m_clientId.size()!=64)
+        if (m_clientId.empty() || m_clientId.size()!=64 || m_clientId == message.getClientId())
             throw std::runtime_error("invalid command parsing");
         requestStream.read(m_buf.data(), 1);
         requestStream >> m_response;
-        // TODO - check if response is good
     }
 
     if (command == MessageCommand::LOGIN_RESPONSE) {

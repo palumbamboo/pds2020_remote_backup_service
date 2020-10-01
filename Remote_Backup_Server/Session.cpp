@@ -377,7 +377,6 @@ void Session::doReadFileContent(size_t t_bytesTransferred) {
                            });
 }
 
-// TODO - should raise exception? Could fail and we have to send m_response = false
 void Session::createClientFolder() const {
     if (!std::filesystem::exists(m_clientId)) {
         if (!std::filesystem::create_directories(m_clientId))

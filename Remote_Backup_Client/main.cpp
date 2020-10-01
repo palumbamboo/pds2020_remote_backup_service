@@ -10,7 +10,7 @@
 #include "FileToUpload.h"
 #include "BackupClient.h"
 
-#define VERSION       "0.1"
+#define VERSION       "1.0"
 #define CONFIG_PATH   "remote_client.cfg"
 
 std::string globalClientId;
@@ -160,10 +160,10 @@ void run_file_watcher(const std::string & path_to_watch, UploadQueue& queue) {
             }
         });
     }
-    // TODO - change print
     catch (std::exception &e) {
-        std::cout << "Exception!" << std::endl;
-        std::cout << e.what() << std::endl;
+        std::string error = "FATAL ERROR FILEWATCHER: ";
+        error.append(e.what());
+        throw std::runtime_error(error);
     }
 }
 
