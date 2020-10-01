@@ -11,22 +11,20 @@ std::string FileToUpload::fileHash() {
         throw std::fstream::failure("Failed while opening file " + path.string() + "\n");
 
     std::string s;
-    std::string hashResult;
     while(std::getline(file, s)) {
-        boost::uuids::detail::md5 hash;
+        boost::uuids::detail::md5 internalHash;
         boost::uuids::detail::md5::digest_type digest;
 
-        hash.process_bytes(s.data(), s.size());
-        hash.get_digest(digest);
+        internalHash.process_bytes(s.data(), s.size());
+        internalHash.get_digest(digest);
 
         std::string result;
 
         const auto charDigest = reinterpret_cast<const char *>(&digest);
         boost::algorithm::hex(charDigest, charDigest + sizeof(boost::uuids::detail::md5::digest_type),
                               std::back_inserter(result));
-        hashResult = result;
+        hash = result;
     }
-    hash = hashResult;
     return hash;
 }
 
