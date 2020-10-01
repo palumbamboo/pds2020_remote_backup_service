@@ -37,7 +37,6 @@ private:
 
     ConnectionStatus _status = NOT_CONNECTED;
     Message message;
-    int times;
     template<class Buffer>
     void writeBuffer(Buffer& t_buffer);
 
@@ -66,7 +65,6 @@ public:
 template<class Buffer>
 void Client::writeBuffer(Buffer& t_buffer)
 {
-    times++;
     boost::asio::async_write(socket,
                              t_buffer,
                              [this](boost::system::error_code ec, size_t /*length*/)

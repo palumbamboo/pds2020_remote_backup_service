@@ -10,8 +10,7 @@ bool is_number(const std::string& s);
 Client::Client(const std::string &address, const std::string &port, Message & _message) :
         resolver{ioService},
         socket{ioService},
-        message{_message},
-        times(0) {
+        message{_message} {
     endpointIterator = resolver.resolve(address, port);
 }
 
@@ -110,13 +109,6 @@ void Client::openFile(Message& t_message)
 void Client::doWriteFile(const boost::system::error_code& t_ec)
 {
     if (!t_ec) {
-//        if (m_command == MessageCommand::INFO_REQUEST   ||
-//            m_command == MessageCommand::LOGIN_REQUEST  ||
-//            m_command == MessageCommand::END_INFO_PHASE ||
-//            m_command == MessageCommand::REMOVE) {
-//            doRead();
-//            return;
-//        }
         if (m_sourceFile && m_command == MessageCommand::CREATE) {
             m_sourceFile.read(m_buf.data(), m_buf.size());
             if (m_sourceFile.fail() && !m_sourceFile.eof()) {
@@ -131,7 +123,7 @@ void Client::doWriteFile(const boost::system::error_code& t_ec)
 
         doRead();
     } else {
-        std::cout << "\tERROR -> with server connection: " << t_ec.message();
+        std::cout << "\n\tERROR -> with server connection: " << t_ec.message() << "\nFORCE CLOSE, retry later" << std::endl;
         exit(1);
     }
 }
