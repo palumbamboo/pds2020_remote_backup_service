@@ -70,6 +70,11 @@ void Client::try_connect() {
                                [this](boost::system::error_code ec, const tcp::endpoint &endpoint){
                                    if(!ec)
                                    {
+                                       if(_status == NOT_CONNECTED) {
+                                           std::cout << "\tCONNECTION RESTORED" << std::endl;
+                                           retry = 0;
+                                           std::cout << "\tSENDING AGAIN file: " << message.getFile().getPathName() << std::endl;
+                                       }
                                        _status = CONNECTED;
                                        writeBuffer(m_request);
                                    }
@@ -171,7 +176,7 @@ void Client::processRead(size_t t_bytesTransferred) {
         command == MessageCommand::CREATE  ||
         command == MessageCommand::REMOVE) {
         requestStream >> m_clientId;
-        if (m_clientId.empty() || m_clientId.size()!=64 || m_clientId == message.getClientId())
+        if (m_clientId.empty() || m_clientId.size()!=64 || m_clientId != message.getClientId())
             throw std::runtime_error("invalid command parsing");
         requestStream.read(m_buf.data(), 1);
         requestStream >> m_response;

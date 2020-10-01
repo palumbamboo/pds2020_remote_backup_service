@@ -35,7 +35,7 @@ private:
 
     int retry=0;
 
-    ConnectionStatus _status = NOT_CONNECTED;
+    ConnectionStatus _status = CONNECTED;
     Message message;
     template<class Buffer>
     void writeBuffer(Buffer& t_buffer);
