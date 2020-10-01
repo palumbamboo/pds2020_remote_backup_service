@@ -11,14 +11,16 @@
 #include "FileToUpload.h"
 
 enum class MessageCommand {
-    CREATE = 0,
-    REMOVE = 1,
-    INFO_REQUEST = 2,
-    INFO_RESPONSE = 3,
-    END_INFO_PHASE = 4,
-    LOGIN_REQUEST = 5,
-    LOGIN_RESPONSE = 6,
+    CREATE          = 0,
+    REMOVE          = 1,
+    INFO_REQUEST    = 2,
+    INFO_RESPONSE   = 3,
+    END_INFO_PHASE  = 4,
+    LOGIN_REQUEST   = 5,
+    LOGIN_RESPONSE  = 6,
 };
+
+MessageCommand parseIntToCommand(int _command);
 
 class Message {
     FileToUpload fileToUpload;
@@ -26,7 +28,7 @@ class Message {
     std::string clientId;
     std::string username;
     std::string password;
-    bool forceAlignment;
+    bool forceAlignment{};
 public:
     explicit Message(MessageCommand _command,
                      std::string _username,
@@ -73,7 +75,7 @@ public:
         return password;
     }
 
-    bool getForceAlignment() {
+    bool getForceAlignment() const {
         return forceAlignment;
     }
 

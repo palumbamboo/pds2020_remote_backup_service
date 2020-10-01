@@ -24,9 +24,9 @@ Message UploadQueue::popMessage() {
 
 bool UploadQueue::readyToClose() {
     std::unique_lock<std::mutex> uniqueLock(mutex);
-    if(!queue.empty())
-        std::cout << "\tUPLOAD QUEUE NOT EMPTY -> waiting " << queue.size() << " messages" <<std::endl;
-    destroyQueue.wait(uniqueLock, [this](){ return queue.empty(); });
+//    if(!queue.empty())
+//        std::cout << "\tUPLOAD QUEUE NOT EMPTY -> waiting " << queue.size() << " messages" <<std::endl;
+//    destroyQueue.wait(uniqueLock, [this](){ return queue.empty(); });
     std::cout << "\tUPLOAD QUEUE -> empty" << std::endl;
     return true;
 }
