@@ -43,7 +43,7 @@ void Client::start() {
             // REMOVE | | clientID | | path
         case MessageCommand::REMOVE: {
             m_command = MessageCommand::REMOVE;
-            std::cout << "\tREMOVE file from server: " << message.getFile().getPathName();
+            std::cout << "\tREMOVING file from server: " << message.getFile().getPathName() << std::endl;
             sendRemoveRequest(message);
             break;
         }
@@ -51,7 +51,7 @@ void Client::start() {
             // file data inside request body
         case MessageCommand::CREATE: {
             m_command = MessageCommand::CREATE;
-            std::cout << "\tSEND file to server: " << message.getFile().getPathName();
+            std::cout << "\tSENDING file to server: " << message.getFile().getPathName() << ", size: " << message.getFile().getFileSize() << "B" << std::endl;
             openFile(message);
             break;
         }

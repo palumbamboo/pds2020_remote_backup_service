@@ -79,9 +79,9 @@ std::string passwordHash(std::string s) {
 void createClientSend(Message& message, const std::string& address, const std::string& port) {
     Client client(address, port, message);
     backupClient.set_currentClient(client);
-    client.start();
-
     MessageCommand command = message.getCommand();
+
+    client.start();
 
     switch (command) {
         // LOGIN_REQUEST | | username | | hashed password
@@ -138,13 +138,13 @@ void run_file_watcher(const std::string & path_to_watch, UploadQueue& queue) {
 
             switch (status) {
                 case FileStatus::created: {
-                    FileToUpload fileToUpload(folderToWatch, filePath);
+                    FileToUpload fileToUpload(folderToWatch, filePath, std::filesystem::file_size(filePath));
                     Message message(MessageCommand::CREATE, fileToUpload, globalClientId);
                     queue.pushMessage(message);
                     break;
                 }
                 case FileStatus::modified: {
-                    FileToUpload fileToUpload(folderToWatch, filePath);
+                    FileToUpload fileToUpload(folderToWatch, filePath, std::filesystem::file_size(filePath));
                     Message message(MessageCommand::CREATE, fileToUpload, globalClientId);
                     queue.pushMessage(message);
                     break;
@@ -173,7 +173,7 @@ void scan_directory(const std::string& path_to_watch, UploadQueue& queue, const 
         ++itEntry ) {
         const auto filenameStr = itEntry->path().filename().string();
         if (itEntry->is_regular_file()) {
-            FileToUpload fileToUpload(folderToWatch, itEntry->path());
+            FileToUpload fileToUpload(folderToWatch, itEntry->path(), std::filesystem::file_size(itEntry->path()));
             std::string hash = fileToUpload.fileHash();
 
             Message message(MessageCommand::INFO_REQUEST, fileToUpload, globalClientId);
@@ -350,7 +350,6 @@ int main(int argc, char* argv[]) {
         });
 
         std::thread tcq([&uploadQueue, &address, &port](){
-            // TODO - variable shutdowncomplete?
             while(!shutdownComplete) {
                 Message message = uploadQueue.popMessage();
                 createClientSend(message, address, port);
@@ -360,7 +359,7 @@ int main(int argc, char* argv[]) {
                         uploadQueue.pushMessage(message);
                     }
                 } else {
-                    std::cout << " -> DONE" << std::endl;
+                    std::cout << "\t\t -> DONE" << std::endl;
                 }
             }
         });
